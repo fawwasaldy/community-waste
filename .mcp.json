@@ -4,7 +4,7 @@
             "command": "wsl.exe",
             "args": [
                 "/home/cyanstar/.phpenv/versions/8.5.3/bin/php",
-                "/mnt/d/Project/laravel/community-waste/artisan",
+                "/mnt/c/Users/User RPL 17/Documents/Projects/laravel/community-waste/artisan",
                 "boost:mcp"
             ]
         }
