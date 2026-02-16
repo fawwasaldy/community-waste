@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "wsl.exe",
+            "args": [
+                "/home/cyanstar/.phpenv/versions/8.5.3/bin/php",
+                "/mnt/d/Project/laravel/community-waste/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
