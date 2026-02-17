@@ -100,4 +100,25 @@ class WasteService
 
         return $this->wasteRepository->markCompleted($waste);
     }
+
+    /**
+     * @throws ValidationException
+     * @throws ModelNotFoundException
+     */
+    public function cancelPickup(string $id): Waste
+    {
+        $waste = $this->wasteRepository->find($id);
+
+        if (! $waste) {
+            throw (new ModelNotFoundException)->setModel(Waste::class, $id);
+        }
+
+        if ($waste->status !== WasteStatus::Scheduled) {
+            throw ValidationException::withMessages([
+                'status' => ['The pickup must be in scheduled status to be canceled.'],
+            ]);
+        }
+
+        return $this->wasteRepository->markCanceled($waste);
+    }
 }

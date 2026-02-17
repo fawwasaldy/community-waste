@@ -197,3 +197,31 @@ describe('completePickup', function () {
         $service->completePickup('nonexistent-id');
     })->throws(ModelNotFoundException::class);
 });
+
+describe('cancelPickup', function () {
+    it('cancels a scheduled waste pickup', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $result = $service->cancelPickup($waste->_id);
+
+        expect($result->status)->toBe(WasteStatus::Canceled);
+    });
+
+    it('throws ValidationException when status is not scheduled', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Pending->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $service->cancelPickup($waste->_id);
+    })->throws(ValidationException::class);
+
+    it('throws ModelNotFoundException when waste not found', function () {
+        $service = app(WasteService::class);
+
+        $service->cancelPickup('nonexistent-id');
+    })->throws(ModelNotFoundException::class);
+});
