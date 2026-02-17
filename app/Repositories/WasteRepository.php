@@ -2,13 +2,14 @@
 
 namespace App\Repositories;
 
+use App\Enums\WasteStatus;
 use App\Models\Waste;
 use App\Models\WasteElectronic;
 use App\Models\WasteOrganic;
 use App\Models\WastePaper;
 use App\Models\WastePlastic;
-use InvalidArgumentException;
 use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 class WasteRepository
 {
@@ -50,6 +51,20 @@ class WasteRepository
         return $query;
     }
 
+    public function find(string $id): ?Waste
+    {
+        $waste = Waste::find($id);
+
+        if (! $waste) {
+            return null;
+        }
+
+        $modelClass = $this->resolveModelClass($waste->type->value);
+
+        /** @var Waste|null */
+        return $modelClass::find($id);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -58,5 +73,14 @@ class WasteRepository
         $modelClass = $this->resolveModelClass($type);
 
         return $modelClass::create($data);
+    }
+
+    public function updateSchedule(Waste $waste, string $pickupDate): Waste
+    {
+        $waste->pickup_date = $pickupDate;
+        $waste->status = WasteStatus::Scheduled;
+        $waste->save();
+
+        return $waste;
     }
 }
