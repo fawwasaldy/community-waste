@@ -6,11 +6,20 @@ use App\Enums\WasteStatus;
 use App\Models\Household;
 use App\Models\Waste;
 use App\Repositories\WasteRepository;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
 class WasteService
 {
     public function __construct(private WasteRepository $repository) {}
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function getPickups(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->repository->query($filters)->paginate($perPage);
+    }
 
     /**
      * @param  array<string, mixed>  $data

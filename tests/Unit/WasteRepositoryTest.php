@@ -45,6 +45,52 @@ it('creates correct model instance per type', function (string $type, string $ex
     'electronic' => ['electronic', WasteElectronic::class],
 ]);
 
+describe('query', function () {
+    it('returns all wastes when no filters', function () {
+        WasteOrganic::factory()->count(2)->create();
+        WastePlastic::factory()->create();
+
+        $repository = new WasteRepository;
+        $results = $repository->query()->get();
+
+        expect($results)->toHaveCount(3);
+    });
+
+    it('filters by status', function () {
+        WasteOrganic::factory()->create(['status' => 'pending']);
+        WasteOrganic::factory()->create(['status' => 'completed']);
+
+        $repository = new WasteRepository;
+        $results = $repository->query(['status' => 'pending'])->get();
+
+        expect($results)->toHaveCount(1)
+            ->and($results->first()->status->value)->toBe('pending');
+    });
+
+    it('filters by type', function () {
+        WasteOrganic::factory()->create();
+        WastePlastic::factory()->create();
+
+        $repository = new WasteRepository;
+        $results = $repository->query(['type' => 'organic'])->get();
+
+        expect($results)->toHaveCount(1)
+            ->and($results->first()->type->value)->toBe('organic');
+    });
+
+    it('filters by household_id', function () {
+        $household = Household::factory()->create();
+        WasteOrganic::factory()->create(['household_id' => $household->_id]);
+        WasteOrganic::factory()->create();
+
+        $repository = new WasteRepository;
+        $results = $repository->query(['household_id' => $household->_id])->get();
+
+        expect($results)->toHaveCount(1)
+            ->and($results->first()->household_id)->toBe($household->_id);
+    });
+});
+
 it('includes safety_check for electronic type', function () {
     $household = Household::factory()->create();
     $repository = new WasteRepository;

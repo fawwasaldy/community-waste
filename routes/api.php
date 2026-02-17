@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
+
+Route::get('pickups', [PickupController::class, 'index']);
 Route::post('pickups', [PickupController::class, 'store']);
 
 Route::middleware('auth:api')->group(function (): void {

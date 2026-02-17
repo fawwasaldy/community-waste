@@ -49,7 +49,7 @@ class HouseholdController extends Controller
 
         $household = Household::create($request->validated());
 
-        return (new HouseholdResource($household))
+        return new HouseholdResource($household)
             ->response()
             ->setStatusCode(201);
     }
