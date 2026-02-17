@@ -37,4 +37,11 @@ class PickupController extends Controller
 
         return new WasteResource($waste);
     }
+
+    public function complete(string $id, WasteService $service): WasteResource
+    {
+        $waste = $service->completePickup($id);
+
+        return new WasteResource($waste);
+    }
 }

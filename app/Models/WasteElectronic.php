@@ -25,6 +25,11 @@ class WasteElectronic extends Waste
         ];
     }
 
+    public function getPaymentAmount(): int
+    {
+        return 100000;
+    }
+
     protected static function booted(): void
     {
         static::addGlobalScope(WasteType::Electronic->value, function ($query) {

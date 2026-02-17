@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\WasteStatus;
 use App\Enums\WasteType;
 use App\Models\Household;
 use App\Models\User;
@@ -120,6 +121,21 @@ describe('schedule', function () {
         expect($updated->status)->toBe(\App\Enums\WasteStatus::Scheduled)
             ->and($updated->pickup_date->format('Y-m-d'))->toBe($pickupDate);
     });
+});
+
+describe('complete', function () {
+    it('markCompleted updates status to completed', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+        $repository = new WasteRepository;
+
+        $result = $repository->markCompleted($waste);
+
+        expect($result->status)->toBe(WasteStatus::Completed)
+            ->and($waste->fresh()->status)->toBe(WasteStatus::Completed);
+    });
+
 });
 
 it('includes safety_check for electronic type', function () {

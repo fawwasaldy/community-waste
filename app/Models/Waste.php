@@ -48,4 +48,9 @@ class Waste extends Model
             ]);
         }
     }
+
+    public function getPaymentAmount(): int
+    {
+        return 50000;
+    }
 }
