@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
-use App\Enums\WasteStatus;
+use App\Enums\WasteType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class WasteElectronic extends Waste
 {
+    use HasFactory;
+
     protected $fillable = [
         'household_id',
         'type',
@@ -17,20 +20,19 @@ class WasteElectronic extends Waste
     protected function casts(): array
     {
         return [
-            'pickup_date' => 'date:Y-m-d',
-            'status' => WasteStatus::class,
+            ...parent::casts(),
             'safety_check' => 'boolean',
         ];
     }
 
     protected static function booted(): void
     {
-        static::addGlobalScope('electronic', function ($query) {
-            $query->where('type', 'electronic');
+        static::addGlobalScope(WasteType::Electronic->value, function ($query) {
+            $query->where('type', WasteType::Electronic);
         });
 
         static::creating(function ($waste) {
-            $waste->type = 'electronic';
+            $waste->type = WasteType::Electronic;
         });
     }
 }
