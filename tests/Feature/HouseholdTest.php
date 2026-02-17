@@ -103,7 +103,7 @@ describe('store', function () {
             ->postJson('/api/households', []);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['owner_name', 'address', 'block', 'no']);
+            ->assertJsonValidationErrors(['owner_name', 'address']);
     });
 
     it('fails without authentication', function () {

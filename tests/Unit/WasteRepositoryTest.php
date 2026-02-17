@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\WasteType;
 use App\Models\Household;
 use App\Models\User;
 use App\Models\Waste;
@@ -36,7 +37,7 @@ it('creates correct model instance per type', function (string $type, string $ex
     ]);
 
     expect($waste)->toBeInstanceOf($expectedClass)
-        ->and($waste->type)->toBe($type);
+        ->and($waste->type)->toBe(WasteType::from($type));
 })->with([
     'organic' => ['organic', WasteOrganic::class],
     'plastic' => ['plastic', WastePlastic::class],

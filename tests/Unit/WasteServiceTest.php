@@ -2,6 +2,7 @@
 
 use App\Enums\PaymentStatus;
 use App\Enums\WasteStatus;
+use App\Enums\WasteType;
 use App\Models\Household;
 use App\Models\Payment;
 use App\Models\User;
@@ -26,7 +27,7 @@ it('creates waste with the correct type', function () {
     ]);
 
     expect($waste)->toBeInstanceOf(WasteOrganic::class)
-        ->and($waste->type)->toBe('organic')
+        ->and($waste->type)->toBe(WasteType::Organic)
         ->and($waste->household_id)->toBe($household->_id);
 });
 

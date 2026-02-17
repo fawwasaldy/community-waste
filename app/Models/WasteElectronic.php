@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\WasteStatus;
 use App\Enums\WasteType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -21,9 +20,7 @@ class WasteElectronic extends Waste
     protected function casts(): array
     {
         return [
-            'pickup_date' => 'date:Y-m-d',
-            'status' => WasteStatus::class,
-            'type' => WasteType::class,
+            ...parent::casts(),
             'safety_check' => 'boolean',
         ];
     }
