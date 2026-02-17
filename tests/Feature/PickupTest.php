@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Enums\WasteStatus;
 use App\Models\Household;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\Waste;
+use App\Models\WasteElectronic;
 use App\Models\WasteOrganic;
 use App\Models\WastePaper;
 use App\Models\WastePlastic;
@@ -304,6 +306,93 @@ describe('schedule', function () {
             ->putJson('/api/pickups/nonexistent-id/schedule', [
                 'pickup_date' => now()->format('Y-m-d'),
             ]);
+
+        $response->assertNotFound();
+    });
+});
+
+describe('complete', function () {
+    it('returns 401 when unauthenticated', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+
+        $response = $this->putJson("/api/pickups/{$waste->_id}/complete");
+
+        $response->assertUnauthorized();
+    });
+
+    it('completes a scheduled pickup', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/complete");
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.status', 'completed');
+
+        expect($waste->fresh()->status)->toBe(WasteStatus::Completed);
+    });
+
+    it('creates a payment with correct amount for organic waste', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+
+        $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/complete");
+
+        $payment = Payment::where('household_id', $waste->household_id)->first();
+
+        expect($payment)->not->toBeNull()
+            ->and((int) $payment->amount)->toBe(50000)
+            ->and($payment->status)->toBe(PaymentStatus::Pending)
+            ->and($payment->payment_date)->toBeNull()
+            ->and($payment->household_id)->toBe($waste->household_id);
+    });
+
+    it('creates a payment with correct amount for electronic waste', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteElectronic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+
+        $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/complete");
+
+        $payment = Payment::where('household_id', $waste->household_id)->first();
+
+        expect($payment)->not->toBeNull()
+            ->and((int) $payment->amount)->toBe(100000);
+    });
+
+    it('rejects completing a non-scheduled pickup', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Pending->value,
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/complete");
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    });
+
+    it('returns 404 for non-existent pickup id', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson('/api/pickups/nonexistent-id/complete');
 
         $response->assertNotFound();
     });

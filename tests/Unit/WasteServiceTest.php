@@ -7,6 +7,7 @@ use App\Models\Household;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\Waste;
+use App\Models\WasteElectronic;
 use App\Models\WasteOrganic;
 use App\Services\WasteService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -124,5 +125,75 @@ describe('schedulePickup', function () {
         $service = app(WasteService::class);
 
         $service->schedulePickup('nonexistent-id', now()->format('Y-m-d'));
+    })->throws(ModelNotFoundException::class);
+});
+
+describe('completePickup', function () {
+    it('completes a scheduled waste pickup', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $result = $service->completePickup($waste->_id);
+
+        expect($result->status)->toBe(WasteStatus::Completed);
+    });
+
+    it('creates a payment record on completion', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $service->completePickup($waste->_id);
+
+        $payment = Payment::where('household_id', $waste->household_id)->first();
+
+        expect($payment)->not->toBeNull()
+            ->and($payment->status)->toBe(PaymentStatus::Pending)
+            ->and($payment->household_id)->toBe($waste->household_id)
+            ->and($payment->payment_date)->toBeNull();
+    });
+
+    it('payment amount is 50000 for organic', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $service->completePickup($waste->_id);
+
+        $payment = Payment::where('household_id', $waste->household_id)->first();
+
+        expect((int) $payment->amount)->toBe(50000);
+    });
+
+    it('payment amount is 100000 for electronic', function () {
+        $waste = WasteElectronic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $service->completePickup($waste->_id);
+
+        $payment = Payment::where('household_id', $waste->household_id)->first();
+
+        expect((int) $payment->amount)->toBe(100000);
+    });
+
+    it('throws ValidationException when status is not scheduled', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Pending->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $service->completePickup($waste->_id);
+    })->throws(ValidationException::class);
+
+    it('throws ModelNotFoundException when waste not found', function () {
+        $service = app(WasteService::class);
+
+        $service->completePickup('nonexistent-id');
     })->throws(ModelNotFoundException::class);
 });

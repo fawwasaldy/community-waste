@@ -19,4 +19,5 @@ Route::middleware('auth:api')->group(function (): void {
     Route::apiResource('households', HouseholdController::class);
 
     Route::put('pickups/{id}/schedule', [PickupController::class, 'schedule']);
+    Route::put('pickups/{id}/complete', [PickupController::class, 'complete']);
 });

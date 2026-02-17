@@ -83,4 +83,12 @@ class WasteRepository
 
         return $waste;
     }
+
+    public function markCompleted(Waste $waste): Waste
+    {
+        $waste->status = WasteStatus::Completed;
+        $waste->save();
+
+        return $waste;
+    }
 }

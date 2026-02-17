@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatus;
 use App\Enums\WasteStatus;
 use App\Models\Household;
 use App\Models\Waste;
+use App\Repositories\PaymentRepository;
 use App\Repositories\WasteRepository;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -13,14 +15,17 @@ use Illuminate\Validation\ValidationException;
 
 class WasteService
 {
-    public function __construct(private WasteRepository $repository) {}
+    public function __construct(
+        private WasteRepository $wasteRepository,
+        private PaymentRepository $paymentRepository
+    ) {}
 
     /**
      * @param  array<string, mixed>  $filters
      */
     public function getPickups(array $filters, int $perPage = 10): LengthAwarePaginator
     {
-        return $this->repository->query($filters)->paginate($perPage);
+        return $this->wasteRepository->query($filters)->paginate($perPage);
     }
 
     /**
@@ -40,7 +45,7 @@ class WasteService
 
         $data['status'] = WasteStatus::Pending->value;
 
-        return $this->repository->create($data['type'], $data);
+        return $this->wasteRepository->create($data['type'], $data);
     }
 
     /**
@@ -49,7 +54,7 @@ class WasteService
      */
     public function schedulePickup(string $id, string $pickupDate): Waste
     {
-        $waste = $this->repository->find($id);
+        $waste = $this->wasteRepository->find($id);
 
         if (! $waste) {
             throw (new ModelNotFoundException)->setModel(Waste::class, $id);
@@ -63,6 +68,36 @@ class WasteService
 
         $waste->validateSchedule(Carbon::parse($pickupDate));
 
-        return $this->repository->updateSchedule($waste, $pickupDate);
+        return $this->wasteRepository->updateSchedule($waste, $pickupDate);
+    }
+
+    /**
+     * @throws ValidationException
+     * @throws ModelNotFoundException
+     */
+    public function completePickup(string $id): Waste
+    {
+        $waste = $this->wasteRepository->find($id);
+
+        if (! $waste) {
+            throw (new ModelNotFoundException)->setModel(Waste::class, $id);
+        }
+
+        if ($waste->status !== WasteStatus::Scheduled) {
+            throw ValidationException::withMessages([
+                'status' => ['The pickup must be in scheduled status to be completed.'],
+            ]);
+        }
+
+        $paymentData = [
+            'household_id' => $waste->household_id,
+            'amount' => $waste->getPaymentAmount(),
+            'payment_date' => null,
+            'status' => PaymentStatus::Pending->value,
+        ];
+
+        $this->paymentRepository->create($paymentData);
+
+        return $this->wasteRepository->markCompleted($waste);
     }
 }
