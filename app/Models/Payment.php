@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\PaymentStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
 
 class Payment extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'household_id',
         'amount',
