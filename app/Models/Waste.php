@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use App\Enums\WasteStatus;
-use Illuminate\Validation\Rules\Enum;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
 
 class Waste extends Model
 {
-
+    use HasFactory;
 
     protected $fillable = [
         'household_id',
