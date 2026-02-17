@@ -12,6 +12,8 @@ Route::post('login', [AuthController::class, 'login']);
 Route::get('pickups', [PickupController::class, 'index']);
 Route::post('pickups', [PickupController::class, 'store']);
 
+Route::get('payments', [PaymentController::class, 'index']);
+
 Route::middleware('auth:api')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
