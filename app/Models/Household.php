@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\HasMany;
 
 class Household extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'owner_name',
         'address',
@@ -49,8 +53,15 @@ class Household extends Model
         return $this->hasMany(WasteElectronic::class);
     }
 
-    protected function payments(): HasMany
+    public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function hasUnpaidPayments(): bool
+    {
+        return $this->payments()
+            ->whereIn('status', [PaymentStatus::Pending->value, PaymentStatus::Failed->value])
+            ->exists();
     }
 }
