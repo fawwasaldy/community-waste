@@ -135,7 +135,20 @@ describe('complete', function () {
         expect($result->status)->toBe(WasteStatus::Completed)
             ->and($waste->fresh()->status)->toBe(WasteStatus::Completed);
     });
+});
 
+describe('cancel', function () {
+    it('markCanceled updates status to canceled', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+        $repository = new WasteRepository;
+
+        $result = $repository->markCanceled($waste);
+
+        expect($result->status)->toBe(WasteStatus::Canceled)
+            ->and($waste->fresh()->status)->toBe(WasteStatus::Canceled);
+    });
 });
 
 it('includes safety_check for electronic type', function () {

@@ -91,4 +91,12 @@ class WasteRepository
 
         return $waste;
     }
+
+    public function markCanceled(Waste $waste): Waste
+    {
+        $waste->status = WasteStatus::Canceled;
+        $waste->save();
+
+        return $waste;
+    }
 }

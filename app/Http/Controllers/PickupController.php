@@ -44,4 +44,11 @@ class PickupController extends Controller
 
         return new WasteResource($waste);
     }
+
+    public function cancel(string $id, WasteService $service): WasteResource
+    {
+        $waste = $service->cancelPickup($id);
+
+        return new WasteResource($waste);
+    }
 }

@@ -398,6 +398,58 @@ describe('complete', function () {
     });
 });
 
+describe('cancel', function () {
+    it('returns 401 when unauthenticated', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+
+        $response = $this->putJson("/api/pickups/{$waste->_id}/cancel");
+
+        $response->assertUnauthorized();
+    });
+
+    it('cancels a scheduled pickup', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/cancel");
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.status', 'canceled');
+
+        expect($waste->fresh()->status)->toBe(WasteStatus::Canceled);
+    });
+
+    it('rejects canceling a non-scheduled pickup', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Pending->value,
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/cancel");
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    });
+
+    it('returns 404 for non-existent pickup id', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson('/api/pickups/nonexistent-id/cancel');
+
+        $response->assertNotFound();
+    });
+});
+
 describe('cancel:expired-organic-waste', function () {
     it('cancels pending organic waste older than 3 days', function () {
         $waste = WasteOrganic::factory()->create([
