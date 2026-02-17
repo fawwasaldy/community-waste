@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Waste;
 use App\Models\WasteOrganic;
 use App\Services\WasteService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
@@ -79,3 +80,49 @@ it('throws when household has unpaid payments', function () {
         'type' => 'organic',
     ]);
 })->throws(ValidationException::class);
+
+describe('schedulePickup', function () {
+    it('schedules a pending waste pickup', function () {
+        $waste = WasteOrganic::factory()->create();
+        $service = app(WasteService::class);
+        $pickupDate = now()->format('Y-m-d');
+
+        $result = $service->schedulePickup($waste->_id, $pickupDate);
+
+        expect($result->status)->toBe(WasteStatus::Scheduled)
+            ->and($result->pickup_date->format('Y-m-d'))->toBe($pickupDate);
+    });
+
+    it('throws ValidationException when status is not pending', function () {
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Completed->value,
+        ]);
+        $service = app(WasteService::class);
+
+        $service->schedulePickup($waste->_id, now()->format('Y-m-d'));
+    })->throws(ValidationException::class);
+
+    it('throws ValidationException when pickup_date is before created_at', function () {
+        $waste = WasteOrganic::factory()->create([
+            'created_at' => now(),
+        ]);
+        $service = app(WasteService::class);
+
+        $service->schedulePickup($waste->_id, now()->subDay()->format('Y-m-d'));
+    })->throws(ValidationException::class);
+
+    it('throws ValidationException when organic pickup_date exceeds 3 days', function () {
+        $waste = WasteOrganic::factory()->create([
+            'created_at' => now(),
+        ]);
+        $service = app(WasteService::class);
+
+        $service->schedulePickup($waste->_id, now()->addDays(4)->format('Y-m-d'));
+    })->throws(ValidationException::class);
+
+    it('throws ModelNotFoundException when waste not found', function () {
+        $service = app(WasteService::class);
+
+        $service->schedulePickup('nonexistent-id', now()->format('Y-m-d'));
+    })->throws(ModelNotFoundException::class);
+});

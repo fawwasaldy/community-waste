@@ -91,6 +91,37 @@ describe('query', function () {
     });
 });
 
+describe('schedule', function () {
+    it('finds waste by id', function () {
+        $waste = WasteOrganic::factory()->create();
+        $repository = new WasteRepository;
+
+        $found = $repository->find($waste->_id);
+
+        expect($found)->not->toBeNull()
+            ->and($found->_id)->toBe($waste->_id);
+    });
+
+    it('returns null for non-existent id', function () {
+        $repository = new WasteRepository;
+
+        $found = $repository->find('nonexistent-id');
+
+        expect($found)->toBeNull();
+    });
+
+    it('updates schedule with pickup_date and status', function () {
+        $waste = WasteOrganic::factory()->create();
+        $repository = new WasteRepository;
+        $pickupDate = now()->format('Y-m-d');
+
+        $updated = $repository->updateSchedule($waste, $pickupDate);
+
+        expect($updated->status)->toBe(\App\Enums\WasteStatus::Scheduled)
+            ->and($updated->pickup_date->format('Y-m-d'))->toBe($pickupDate);
+    });
+});
+
 it('includes safety_check for electronic type', function () {
     $household = Household::factory()->create();
     $repository = new WasteRepository;

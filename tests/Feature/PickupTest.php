@@ -3,12 +3,14 @@
 use App\Enums\WasteStatus;
 use App\Models\Household;
 use App\Models\Payment;
+use App\Models\User;
 use App\Models\Waste;
 use App\Models\WasteOrganic;
 use App\Models\WastePaper;
 use App\Models\WastePlastic;
 
 beforeEach(function () {
+    User::query()->delete();
     Household::query()->delete();
     Waste::query()->delete();
 });
@@ -183,6 +185,127 @@ describe('store', function () {
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['household_id']);
+    });
+});
+
+describe('schedule', function () {
+    it('returns 401 when unauthenticated', function () {
+        $waste = WasteOrganic::factory()->create();
+
+        $response = $this->putJson("/api/pickups/{$waste->_id}/schedule", [
+            'pickup_date' => now()->format('Y-m-d'),
+        ]);
+
+        $response->assertUnauthorized();
+    });
+
+    it('schedules a pending pickup', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create();
+        $pickupDate = now()->format('Y-m-d');
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/schedule", [
+                'pickup_date' => $pickupDate,
+            ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.status', 'scheduled');
+
+        expect($waste->fresh()->pickup_date->format('Y-m-d'))->toBe($pickupDate);
+    });
+
+    it('rejects scheduling a non-pending pickup', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'status' => WasteStatus::Completed->value,
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/schedule", [
+                'pickup_date' => now()->format('Y-m-d'),
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    });
+
+    it('rejects pickup_date before waste created_at', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'created_at' => now(),
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/schedule", [
+                'pickup_date' => now()->subDay()->format('Y-m-d'),
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pickup_date']);
+    });
+
+    it('rejects organic pickup_date more than 3 days after created_at', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'created_at' => now(),
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/schedule", [
+                'pickup_date' => now()->addDays(4)->format('Y-m-d'),
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['pickup_date']);
+    });
+
+    it('allows organic pickup_date exactly 3 days after created_at', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WasteOrganic::factory()->create([
+            'created_at' => now(),
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/schedule", [
+                'pickup_date' => now()->addDays(3)->format('Y-m-d'),
+            ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.status', 'scheduled');
+    });
+
+    it('allows non-organic pickup_date more than 3 days after created_at', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $waste = WastePlastic::factory()->create([
+            'created_at' => now(),
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/pickups/{$waste->_id}/schedule", [
+                'pickup_date' => now()->addDays(10)->format('Y-m-d'),
+            ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.status', 'scheduled');
+    });
+
+    it('returns 404 for non-existent pickup id', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson('/api/pickups/nonexistent-id/schedule', [
+                'pickup_date' => now()->format('Y-m-d'),
+            ]);
+
+        $response->assertNotFound();
     });
 });
 

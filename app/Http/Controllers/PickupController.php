@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SchedulePickupRequest;
 use App\Http\Requests\StorePickupRequest;
 use App\Http\Resources\WasteResource;
 use App\Services\WasteService;
@@ -28,5 +29,12 @@ class PickupController extends Controller
         return new WasteResource($waste)
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function schedule(SchedulePickupRequest $request, string $id, WasteService $service): WasteResource
+    {
+        $waste = $service->schedulePickup($id, $request->validated()['pickup_date']);
+
+        return new WasteResource($waste);
     }
 }

@@ -17,7 +17,7 @@ class WasteResource extends JsonResource
             'id' => $this->_id,
             'household_id' => $this->household_id,
             'type' => $this->type,
-            'pickup_date' => $this->pickup_date,
+            'pickup_date' => $this->pickup_date?->format('Y-m-d'),
             'status' => $this->status,
             'safety_check' => $this->when($this->type === WasteType::Electronic, $this->safety_check),
             'created_at' => $this->created_at,

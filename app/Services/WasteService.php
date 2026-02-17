@@ -6,6 +6,8 @@ use App\Enums\WasteStatus;
 use App\Models\Household;
 use App\Models\Waste;
 use App\Repositories\WasteRepository;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
@@ -39,5 +41,28 @@ class WasteService
         $data['status'] = WasteStatus::Pending->value;
 
         return $this->repository->create($data['type'], $data);
+    }
+
+    /**
+     * @throws ValidationException
+     * @throws ModelNotFoundException
+     */
+    public function schedulePickup(string $id, string $pickupDate): Waste
+    {
+        $waste = $this->repository->find($id);
+
+        if (! $waste) {
+            throw (new ModelNotFoundException)->setModel(Waste::class, $id);
+        }
+
+        if ($waste->status !== WasteStatus::Pending) {
+            throw ValidationException::withMessages([
+                'status' => ['The pickup must be in pending status to be scheduled.'],
+            ]);
+        }
+
+        $waste->validateSchedule(Carbon::parse($pickupDate));
+
+        return $this->repository->updateSchedule($waste, $pickupDate);
     }
 }

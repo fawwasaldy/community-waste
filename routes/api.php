@@ -17,4 +17,6 @@ Route::middleware('auth:api')->group(function (): void {
     Route::post('refresh', [AuthController::class, 'refresh']);
 
     Route::apiResource('households', HouseholdController::class);
+
+    Route::put('pickups/{id}/schedule', [PickupController::class, 'schedule']);
 });
