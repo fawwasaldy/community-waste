@@ -8,6 +8,7 @@ use App\Models\WasteOrganic;
 use App\Models\WastePaper;
 use App\Models\WastePlastic;
 use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Builder;
 
 class WasteRepository
 {
@@ -25,6 +26,28 @@ class WasteRepository
     public function resolveModelClass(string $type): string
     {
         return self::MODEL_MAP[$type] ?? throw new InvalidArgumentException("Unknown waste type: {$type}");
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function query(array $filters = []): Builder
+    {
+        $query = Waste::query();
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['type'])) {
+            $query->where('type', $filters['type']);
+        }
+
+        if (isset($filters['household_id'])) {
+            $query->where('household_id', $filters['household_id']);
+        }
+
+        return $query;
     }
 
     /**

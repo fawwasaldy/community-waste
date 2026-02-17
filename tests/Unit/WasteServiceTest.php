@@ -43,6 +43,29 @@ it('sets default status to pending', function () {
     expect($waste->status)->toBe(WasteStatus::Pending);
 });
 
+describe('getPickups', function () {
+    it('returns paginated results', function () {
+        WasteOrganic::factory()->count(3)->create();
+
+        $service = app(WasteService::class);
+        $result = $service->getPickups([], 2);
+
+        expect($result)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+            ->and($result->count())->toBe(2)
+            ->and($result->total())->toBe(3);
+    });
+
+    it('passes filters through to repository', function () {
+        WasteOrganic::factory()->create(['status' => WasteStatus::Pending->value]);
+        WasteOrganic::factory()->create(['status' => WasteStatus::Completed->value]);
+
+        $service = app(WasteService::class);
+        $result = $service->getPickups(['status' => 'pending']);
+
+        expect($result->total())->toBe(1);
+    });
+});
+
 it('throws when household has unpaid payments', function () {
     $household = Household::factory()->create();
     Payment::factory()->for($household)->create([
