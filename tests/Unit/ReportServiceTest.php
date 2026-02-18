@@ -104,3 +104,106 @@ describe('getPaymentSummary', function () {
         expect($byStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue();
     });
 });
+
+describe('getHouseholdHistory', function () {
+    it('structures household history correctly', function () {
+        $household = Household::factory()->create();
+
+        WasteOrganic::factory()->count(2)->create([
+            'household_id' => (string) $household->_id,
+            'status' => WasteStatus::Pending->value,
+        ]);
+        WastePlastic::factory()->count(1)->create([
+            'household_id' => (string) $household->_id,
+            'status' => WasteStatus::Completed->value,
+        ]);
+        Payment::factory()->count(2)->paid()->create([
+            'household_id' => (string) $household->_id,
+            'amount' => '100.00',
+        ]);
+
+        $service = app(ReportService::class);
+        $result = $service->getHouseholdHistory((string) $household->_id);
+
+        expect($result)->toHaveKeys(['household_id', 'pickups', 'payments'])
+            ->and($result['pickups'])->toHaveKeys(['total', 'by_status', 'by_type'])
+            ->and($result['pickups']['by_status'])->toHaveCount(4)
+            ->and($result['pickups']['by_type'])->toHaveCount(4)
+            ->and($result['payments'])->toHaveKeys(['total', 'by_status', 'confirmed_revenue', 'projected_revenue'])
+            ->and($result['payments']['by_status'])->toHaveCount(3);
+    });
+
+    it('fills zeros for missing statuses and types', function () {
+        $household = Household::factory()->create();
+
+        WasteOrganic::factory()->count(1)->create([
+            'household_id' => (string) $household->_id,
+            'status' => WasteStatus::Pending->value,
+        ]);
+
+        $service = app(ReportService::class);
+        $result = $service->getHouseholdHistory((string) $household->_id);
+
+        $byStatus = collect($result['pickups']['by_status']);
+        $byType = collect($result['pickups']['by_type']);
+
+        expect($byStatus->firstWhere('status', 'pending')['count'])->toBe(1)
+            ->and($byStatus->firstWhere('status', 'scheduled')['count'])->toBe(0)
+            ->and($byStatus->firstWhere('status', 'completed')['count'])->toBe(0)
+            ->and($byStatus->firstWhere('status', 'canceled')['count'])->toBe(0)
+            ->and($byType->firstWhere('type', 'organic')['count'])->toBe(1)
+            ->and($byType->firstWhere('type', 'plastic')['count'])->toBe(0)
+            ->and($byType->firstWhere('type', 'paper')['count'])->toBe(0)
+            ->and($byType->firstWhere('type', 'electronic')['count'])->toBe(0);
+    });
+
+    it('calculates confirmed_revenue from paid and projected_revenue from paid and pending', function () {
+        $household = Household::factory()->create();
+
+        Payment::factory()->count(2)->paid()->create([
+            'household_id' => (string) $household->_id,
+            'amount' => '100.00',
+        ]);
+        Payment::factory()->count(1)->pending()->create([
+            'household_id' => (string) $household->_id,
+            'amount' => '50.00',
+        ]);
+        Payment::factory()->count(1)->failed()->create([
+            'household_id' => (string) $household->_id,
+            'amount' => '30.00',
+        ]);
+
+        $service = app(ReportService::class);
+        $result = $service->getHouseholdHistory((string) $household->_id);
+
+        expect($result['payments']['confirmed_revenue'])->toBe('200.00')
+            ->and($result['payments']['projected_revenue'])->toBe('250.00');
+    });
+
+    it('returns zeros when household has no data', function () {
+        $household = Household::factory()->create();
+
+        $service = app(ReportService::class);
+        $result = $service->getHouseholdHistory((string) $household->_id);
+
+        expect($result['pickups']['total'])->toBe(0)
+            ->and($result['payments']['total'])->toBe(0)
+            ->and($result['payments']['confirmed_revenue'])->toBe('0.00')
+            ->and($result['payments']['projected_revenue'])->toBe('0.00');
+
+        $byStatus = collect($result['pickups']['by_status']);
+        $byType = collect($result['pickups']['by_type']);
+        $payByStatus = collect($result['payments']['by_status']);
+
+        expect($byStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue()
+            ->and($byType->every(fn ($item) => $item['count'] === 0))->toBeTrue()
+            ->and($payByStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue();
+    });
+
+    it('throws ModelNotFoundException when household not found', function () {
+        $service = app(ReportService::class);
+
+        expect(fn () => $service->getHouseholdHistory('000000000000000000000000'))
+            ->toThrow(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+    });
+});

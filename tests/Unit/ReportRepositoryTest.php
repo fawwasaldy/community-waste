@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Models\Waste;
 use App\Models\WasteOrganic;
+use App\Models\WastePaper;
 use App\Models\WastePlastic;
 use App\Repositories\ReportRepository;
 
@@ -76,5 +77,75 @@ describe('getPaymentSummary', function () {
         expect($results)->toHaveKey('paid')
             ->and($results)->not->toHaveKey('pending')
             ->and($results)->not->toHaveKey('failed');
+    });
+});
+
+describe('getHouseholdPickupHistory', function () {
+    it('returns pickup counts for a specific household', function () {
+        $householdA = Household::factory()->create();
+        $householdB = Household::factory()->create();
+
+        WasteOrganic::factory()->count(2)->create([
+            'household_id' => (string) $householdA->_id,
+            'status' => WasteStatus::Pending->value,
+        ]);
+        WastePlastic::factory()->count(1)->create([
+            'household_id' => (string) $householdA->_id,
+            'status' => WasteStatus::Completed->value,
+        ]);
+        WastePaper::factory()->count(3)->create([
+            'household_id' => (string) $householdB->_id,
+            'status' => WasteStatus::Scheduled->value,
+        ]);
+
+        $repository = new ReportRepository;
+        $results = $repository->getHouseholdPickupHistory((string) $householdA->_id);
+
+        $collection = collect($results);
+
+        expect($collection)->toHaveCount(2)
+            ->and($collection->where('type', 'organic')->where('status', 'pending')->first()['count'])->toBe(2)
+            ->and($collection->where('type', 'plastic')->where('status', 'completed')->first()['count'])->toBe(1);
+    });
+
+    it('returns empty array when household has no pickups', function () {
+        $household = Household::factory()->create();
+
+        $repository = new ReportRepository;
+        $results = $repository->getHouseholdPickupHistory((string) $household->_id);
+
+        expect($results)->toBeArray()->toBeEmpty();
+    });
+});
+
+describe('getHouseholdPaymentHistory', function () {
+    it('returns payment counts and amounts for a specific household', function () {
+        $householdA = Household::factory()->create();
+        $householdB = Household::factory()->create();
+
+        Payment::factory()->count(2)->paid()->create([
+            'household_id' => (string) $householdA->_id,
+            'amount' => '100.00',
+        ]);
+        Payment::factory()->count(1)->create([
+            'household_id' => (string) $householdB->_id,
+            'status' => PaymentStatus::Pending->value,
+        ]);
+
+        $repository = new ReportRepository;
+        $results = $repository->getHouseholdPaymentHistory((string) $householdA->_id);
+
+        expect($results)->toHaveKey('paid')
+            ->and($results['paid']['count'])->toBe(2)
+            ->and($results['paid']['total_amount'])->toBe('200.00');
+    });
+
+    it('returns empty array when household has no payments', function () {
+        $household = Household::factory()->create();
+
+        $repository = new ReportRepository;
+        $results = $repository->getHouseholdPaymentHistory((string) $household->_id);
+
+        expect($results)->toBeArray()->toBeEmpty();
     });
 });
