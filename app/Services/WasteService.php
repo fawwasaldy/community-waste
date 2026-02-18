@@ -75,7 +75,10 @@ class WasteService
 
         $waste->validateSchedule(Carbon::parse($pickupDate));
 
-        return $this->wasteRepository->updateSchedule($waste, $pickupDate);
+        return $this->wasteRepository->update($waste, [
+            'pickup_date' => $pickupDate,
+            'status' => WasteStatus::Scheduled->value,
+        ]);
     }
 
     /**
@@ -105,7 +108,9 @@ class WasteService
 
         $this->paymentRepository->create($paymentData);
 
-        return $this->wasteRepository->markCompleted($waste);
+        return $this->wasteRepository->update($waste, [
+            'status' => WasteStatus::Completed->value,
+        ]);
     }
 
     /**
@@ -126,6 +131,8 @@ class WasteService
             ]);
         }
 
-        return $this->wasteRepository->markCanceled($waste);
+        return $this->wasteRepository->update($waste, [
+            'status' => WasteStatus::Canceled->value,
+        ]);
     }
 }

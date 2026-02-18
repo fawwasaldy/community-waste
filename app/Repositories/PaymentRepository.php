@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -14,13 +13,14 @@ class PaymentRepository
         return Payment::find($id);
     }
 
-    public function updateConfirmation(Payment $payment, string $paymentDate, PaymentStatus $status): Payment
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Payment $payment, array $data): Payment
     {
-        $payment->payment_date = $paymentDate;
-        $payment->status = $status;
-        $payment->save();
+        $payment->update($data);
 
-        return $payment;
+        return $payment->refresh();
     }
 
     /**

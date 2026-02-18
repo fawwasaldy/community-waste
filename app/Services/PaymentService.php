@@ -59,10 +59,9 @@ class PaymentService
             ]);
         }
 
-        return $this->paymentRepository->updateConfirmation(
-            $payment,
-            $data['payment_date'],
-            PaymentStatus::from($data['status']),
-        );
+        return $this->paymentRepository->update($payment, [
+            'payment_date' => $data['payment_date'],
+            'status' => PaymentStatus::from($data['status'])->value,
+        ]);
     }
 }
