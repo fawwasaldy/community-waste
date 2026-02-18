@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ConfirmPaymentRequest;
 use App\Http\Requests\IndexPaymentRequest;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
@@ -28,5 +29,12 @@ class PaymentController extends Controller
         return new PaymentResource($payment)
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function confirm(ConfirmPaymentRequest $request, string $id, PaymentService $service): PaymentResource
+    {
+        $payment = $service->confirmPayment($id, $request->validated());
+
+        return new PaymentResource($payment);
     }
 }

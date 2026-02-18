@@ -5,6 +5,8 @@ use App\Models\Household;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\PaymentService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
     User::query()->delete();
@@ -62,4 +64,50 @@ describe('createPayment', function () {
         expect($payment->household_id)->toBe($household->_id)
             ->and((int) $payment->amount)->toBe(75000);
     });
+});
+
+describe('confirmPayment', function () {
+    it('confirms a pending payment as paid', function () {
+        $payment = Payment::factory()->create(['payment_date' => null]);
+        $service = app(PaymentService::class);
+
+        $result = $service->confirmPayment($payment->_id, [
+            'payment_date' => '2025-01-15',
+            'status' => 'paid',
+        ]);
+
+        expect($result->status)->toBe(PaymentStatus::Paid)
+            ->and($result->payment_date->format('Y-m-d'))->toBe('2025-01-15');
+    });
+
+    it('confirms a pending payment as failed', function () {
+        $payment = Payment::factory()->create(['payment_date' => null]);
+        $service = app(PaymentService::class);
+
+        $result = $service->confirmPayment($payment->_id, [
+            'payment_date' => '2025-02-10',
+            'status' => 'failed',
+        ]);
+
+        expect($result->status)->toBe(PaymentStatus::Failed);
+    });
+
+    it('throws ValidationException when status is not pending', function () {
+        $payment = Payment::factory()->paid()->create();
+        $service = app(PaymentService::class);
+
+        $service->confirmPayment($payment->_id, [
+            'payment_date' => '2025-01-15',
+            'status' => 'paid',
+        ]);
+    })->throws(ValidationException::class);
+
+    it('throws ModelNotFoundException when payment not found', function () {
+        $service = app(PaymentService::class);
+
+        $service->confirmPayment('nonexistent-id', [
+            'payment_date' => '2025-01-15',
+            'status' => 'paid',
+        ]);
+    })->throws(ModelNotFoundException::class);
 });
