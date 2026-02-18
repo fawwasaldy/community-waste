@@ -39,8 +39,9 @@ class HouseholdController extends Controller
         }
 
         $perPage = $request->query('per_page', 10);
+        $disablePagination = filter_var($request->query('disable_pagination', false), FILTER_VALIDATE_BOOLEAN);
 
-        return HouseholdResource::collection($query->paginate($perPage));
+        return HouseholdResource::collection($disablePagination ? $query->get() : $query->paginate($perPage));
     }
 
     public function store(StoreHouseholdRequest $request): JsonResponse

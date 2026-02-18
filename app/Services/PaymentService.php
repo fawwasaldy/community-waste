@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Repositories\PaymentRepository;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
@@ -16,9 +17,15 @@ class PaymentService
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function getPayments(array $filters, int $perPage = 10): LengthAwarePaginator
+    public function getPayments(array $filters, int $perPage = 10, bool $disablePagination = false): Collection|LengthAwarePaginator
     {
-        return $this->paymentRepository->query($filters)->paginate($perPage);
+        $query = $this->paymentRepository->query($filters);
+
+        if ($disablePagination) {
+            return $query->get();
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**

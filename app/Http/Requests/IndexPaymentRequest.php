@@ -22,6 +22,7 @@ class IndexPaymentRequest extends FormRequest
             'payment_date_from' => ['sometimes', 'date_format:Y-m-d'],
             'payment_date_to' => ['sometimes', 'date_format:Y-m-d'],
             'per_page' => ['sometimes', 'integer', 'min:1'],
+            'disable_pagination' => ['sometimes', 'boolean'],
         ];
     }
 

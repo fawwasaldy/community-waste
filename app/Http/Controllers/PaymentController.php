@@ -16,8 +16,9 @@ class PaymentController extends Controller
     {
         $filters = $request->only(['status', 'household_id', 'payment_date_from', 'payment_date_to']);
         $perPage = $request->query('per_page', 10);
+        $disablePagination = filter_var($request->query('disable_pagination', false), FILTER_VALIDATE_BOOLEAN);
 
-        $payments = $service->getPayments($filters, (int) $perPage);
+        $payments = $service->getPayments($filters, (int) $perPage, $disablePagination);
 
         return PaymentResource::collection($payments);
     }
