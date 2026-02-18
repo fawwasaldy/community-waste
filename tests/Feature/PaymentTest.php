@@ -12,10 +12,17 @@ beforeEach(function () {
 });
 
 describe('index', function () {
+    it('returns 401 when unauthenticated', function () {
+        $this->getJson('/api/payments')->assertUnauthorized();
+    });
+
     it('returns paginated payments', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         Payment::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/payments');
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments');
 
         $response->assertOk()
             ->assertJsonCount(3, 'data')
@@ -27,10 +34,13 @@ describe('index', function () {
     });
 
     it('filters by status', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         Payment::factory()->create(['status' => PaymentStatus::Pending->value]);
         Payment::factory()->paid()->create();
 
-        $response = $this->getJson('/api/payments?status=pending');
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?status=pending');
 
         $response->assertOk()
             ->assertJsonCount(1, 'data')
@@ -38,11 +48,14 @@ describe('index', function () {
     });
 
     it('filters by household_id', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         $household = Household::factory()->create();
         Payment::factory()->create(['household_id' => $household->_id]);
         Payment::factory()->create();
 
-        $response = $this->getJson('/api/payments?household_id='.$household->_id);
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?household_id='.$household->_id);
 
         $response->assertOk()
             ->assertJsonCount(1, 'data')
@@ -50,32 +63,41 @@ describe('index', function () {
     });
 
     it('filters by payment_date range', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         Payment::factory()->create(['payment_date' => '2025-01-15']);
         Payment::factory()->create(['payment_date' => '2025-02-15']);
         Payment::factory()->create(['payment_date' => '2025-03-15']);
 
-        $response = $this->getJson('/api/payments?payment_date_from=2025-01-01&payment_date_to=2025-01-31');
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?payment_date_from=2025-01-01&payment_date_to=2025-01-31');
 
         $response->assertOk()
             ->assertJsonCount(1, 'data');
     });
 
     it('combines multiple filters', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         $household = Household::factory()->create();
         Payment::factory()->create(['household_id' => $household->_id, 'status' => PaymentStatus::Pending->value]);
         Payment::factory()->paid()->create(['household_id' => $household->_id]);
         Payment::factory()->create();
 
-        $response = $this->getJson('/api/payments?household_id='.$household->_id.'&status=pending');
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?household_id='.$household->_id.'&status=pending');
 
         $response->assertOk()
             ->assertJsonCount(1, 'data');
     });
 
     it('respects per_page parameter', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         Payment::factory()->count(5)->create();
 
-        $response = $this->getJson('/api/payments?per_page=2');
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?per_page=2');
 
         $response->assertOk()
             ->assertJsonCount(2, 'data')
@@ -83,9 +105,12 @@ describe('index', function () {
     });
 
     it('returns all results without pagination when disable_pagination is true', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         Payment::factory()->count(15)->create();
 
-        $response = $this->getJson('/api/payments?disable_pagination=1');
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?disable_pagination=1');
 
         $response->assertOk()
             ->assertJsonCount(15, 'data')
@@ -94,23 +119,34 @@ describe('index', function () {
     });
 
     it('returns empty data when no matches', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
         Payment::factory()->paid()->create();
 
-        $response = $this->getJson('/api/payments?status=failed');
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?status=failed');
 
         $response->assertOk()
             ->assertJsonCount(0, 'data');
     });
 
     it('rejects invalid payment_date_from format', function () {
-        $response = $this->getJson('/api/payments?payment_date_from=01-2025-15');
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?payment_date_from=01-2025-15');
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['payment_date_from']);
     });
 
     it('rejects invalid payment_date_to format', function () {
-        $response = $this->getJson('/api/payments?payment_date_to=15/01/2025');
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->getJson('/api/payments?payment_date_to=15/01/2025');
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['payment_date_to']);

@@ -12,8 +12,6 @@ Route::post('login', [AuthController::class, 'login']);
 Route::get('pickups', [PickupController::class, 'index']);
 Route::post('pickups', [PickupController::class, 'store']);
 
-Route::get('payments', [PaymentController::class, 'index']);
-
 Route::apiResource('households', HouseholdController::class);
 
 Route::middleware('auth:api')->group(function (): void {
@@ -25,6 +23,7 @@ Route::middleware('auth:api')->group(function (): void {
     Route::put('pickups/{id}/complete', [PickupController::class, 'complete']);
     Route::put('pickups/{id}/cancel', [PickupController::class, 'cancel']);
 
+    Route::get('payments', [PaymentController::class, 'index']);
     Route::post('payments', [PaymentController::class, 'store']);
     Route::put('payments/{id}/confirm', [PaymentController::class, 'confirm']);
 });

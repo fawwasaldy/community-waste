@@ -93,7 +93,7 @@ describe('logout', function () {
         $user = User::factory()->create();
         $token = auth()->login($user);
 
-        $response = $this->withHeader('Authorization', "Bearer $token")
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
             ->postJson('/api/logout');
 
         $response->assertSuccessful()
@@ -112,7 +112,7 @@ describe('me', function () {
         $user = User::factory()->create();
         $token = auth()->login($user);
 
-        $response = $this->withHeader('Authorization', "Bearer $token")
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
             ->getJson('/api/me');
 
         $response->assertSuccessful()
@@ -131,7 +131,7 @@ describe('refresh', function () {
         $user = User::factory()->create();
         $token = auth()->login($user);
 
-        $response = $this->withHeader('Authorization', "Bearer $token")
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
             ->postJson('/api/refresh');
 
         $response->assertSuccessful()
