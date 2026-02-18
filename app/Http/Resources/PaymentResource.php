@@ -18,8 +18,8 @@ class PaymentResource extends JsonResource
             'amount' => $this->amount,
             'payment_date' => $this->payment_date,
             'status' => $this->status,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

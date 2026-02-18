@@ -8,4 +8,4 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('cancel:expired-organic-waste')->daily();
+Schedule::command('cancel:expired-organic-waste')->daily()->timezone('Asia/Jakarta');
