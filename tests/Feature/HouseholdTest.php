@@ -83,6 +83,7 @@ describe('store', function () {
         $response = $this->postJson('/api/households', $data);
 
         $response->assertCreated()
+            ->assertJsonPath('message', 'Household created successfully.')
             ->assertJsonPath('data.owner_name', 'John Doe')
             ->assertJsonPath('data.block', 'A');
 
@@ -104,6 +105,7 @@ describe('show', function () {
         $response = $this->getJson("/api/households/{$household->_id}");
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'Household retrieved successfully.')
             ->assertJsonPath('data.id', $household->_id);
     });
 
@@ -121,6 +123,7 @@ describe('update', function () {
         $response = $this->putJson("/api/households/{$household->_id}", ['owner_name' => 'New Name']);
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'Household updated successfully.')
             ->assertJsonPath('data.owner_name', 'New Name');
     });
 
