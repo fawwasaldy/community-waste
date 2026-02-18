@@ -26,6 +26,16 @@ describe('getPayments', function () {
             ->and($result->total())->toBe(3);
     });
 
+    it('returns all results as Collection when disablePagination is true', function () {
+        Payment::factory()->count(5)->create();
+
+        $service = app(PaymentService::class);
+        $result = $service->getPayments([], 10, true);
+
+        expect($result)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class)
+            ->and($result)->toHaveCount(5);
+    });
+
     it('passes filters through to repository', function () {
         Payment::factory()->create(['status' => PaymentStatus::Pending->value]);
         Payment::factory()->paid()->create();

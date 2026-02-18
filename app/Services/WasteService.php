@@ -9,6 +9,7 @@ use App\Models\Waste;
 use App\Repositories\PaymentRepository;
 use App\Repositories\WasteRepository;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
@@ -23,9 +24,15 @@ class WasteService
     /**
      * @param  array<string, mixed>  $filters
      */
-    public function getPickups(array $filters, int $perPage = 10): LengthAwarePaginator
+    public function getPickups(array $filters, int $perPage = 10, bool $disablePagination = false): Collection|LengthAwarePaginator
     {
-        return $this->wasteRepository->query($filters)->paginate($perPage);
+        $query = $this->wasteRepository->query($filters);
+
+        if ($disablePagination) {
+            return $query->get();
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**

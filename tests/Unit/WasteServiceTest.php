@@ -57,6 +57,16 @@ describe('getPickups', function () {
             ->and($result->total())->toBe(3);
     });
 
+    it('returns all results as Collection when disablePagination is true', function () {
+        WasteOrganic::factory()->count(5)->create();
+
+        $service = app(WasteService::class);
+        $result = $service->getPickups([], 10, true);
+
+        expect($result)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class)
+            ->and($result)->toHaveCount(5);
+    });
+
     it('passes filters through to repository', function () {
         WasteOrganic::factory()->create(['status' => WasteStatus::Pending->value]);
         WasteOrganic::factory()->create(['status' => WasteStatus::Completed->value]);

@@ -16,8 +16,9 @@ class PickupController extends Controller
     {
         $filters = $request->only(['status', 'type', 'household_id']);
         $perPage = $request->query('per_page', 10);
+        $disablePagination = filter_var($request->query('disable_pagination', false), FILTER_VALIDATE_BOOLEAN);
 
-        $pickups = $service->getPickups($filters, (int) $perPage);
+        $pickups = $service->getPickups($filters, (int) $perPage, $disablePagination);
 
         return WasteResource::collection($pickups);
     }
