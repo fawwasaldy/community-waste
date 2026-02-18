@@ -14,12 +14,12 @@ Route::post('pickups', [PickupController::class, 'store']);
 
 Route::get('payments', [PaymentController::class, 'index']);
 
+Route::apiResource('households', HouseholdController::class);
+
 Route::middleware('auth:api')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
     Route::post('refresh', [AuthController::class, 'refresh']);
-
-    Route::apiResource('households', HouseholdController::class);
 
     Route::put('pickups/{id}/schedule', [PickupController::class, 'schedule']);
     Route::put('pickups/{id}/complete', [PickupController::class, 'complete']);
