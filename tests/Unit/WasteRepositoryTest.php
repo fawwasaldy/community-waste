@@ -3,6 +3,7 @@
 use App\Enums\WasteStatus;
 use App\Enums\WasteType;
 use App\Models\Household;
+use App\Models\Payment;
 use App\Models\User;
 use App\Models\Waste;
 use App\Models\WasteElectronic;
@@ -15,6 +16,7 @@ beforeEach(function () {
     User::query()->delete();
     Household::query()->delete();
     Waste::query()->delete();
+    Payment::query()->delete();
 });
 
 it('resolves correct model class for each type', function (string $type, string $expectedClass) {

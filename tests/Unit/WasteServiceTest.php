@@ -17,6 +17,7 @@ beforeEach(function () {
     User::query()->delete();
     Household::query()->delete();
     Waste::query()->delete();
+    Payment::query()->delete();
 });
 
 it('creates waste with the correct type', function () {

@@ -1,9 +1,15 @@
 <?php
 
 use App\Models\Household;
+use App\Models\Payment;
+use App\Models\User;
+use App\Models\Waste;
 
 beforeEach(function () {
+    User::query()->delete();
     Household::query()->delete();
+    Waste::query()->delete();
+    Payment::query()->delete();
 });
 
 describe('index', function () {
