@@ -2,11 +2,27 @@
 
 namespace App\Repositories;
 
+use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
 
 class PaymentRepository
 {
+    public function find(string $id): ?Payment
+    {
+        /** @var Payment|null */
+        return Payment::find($id);
+    }
+
+    public function updateConfirmation(Payment $payment, string $paymentDate, PaymentStatus $status): Payment
+    {
+        $payment->payment_date = $paymentDate;
+        $payment->status = $status;
+        $payment->save();
+
+        return $payment;
+    }
+
     /**
      * @param  array<string, mixed>  $filters
      */

@@ -26,4 +26,5 @@ Route::middleware('auth:api')->group(function (): void {
     Route::put('pickups/{id}/cancel', [PickupController::class, 'cancel']);
 
     Route::post('payments', [PaymentController::class, 'store']);
+    Route::put('payments/{id}/confirm', [PaymentController::class, 'confirm']);
 });

@@ -99,3 +99,47 @@ describe('create', function () {
             ->and($payment->payment_date)->toBeNull();
     });
 });
+
+describe('find', function () {
+    it('finds a payment by id', function () {
+        $payment = Payment::factory()->create();
+        $repository = new PaymentRepository;
+
+        $found = $repository->find($payment->_id);
+
+        expect($found)->not->toBeNull()
+            ->and($found->_id)->toBe($payment->_id);
+    });
+
+    it('returns null for non-existent id', function () {
+        $repository = new PaymentRepository;
+
+        $found = $repository->find('nonexistent-id');
+
+        expect($found)->toBeNull();
+    });
+});
+
+describe('updateConfirmation', function () {
+    it('updates payment_date and status to paid', function () {
+        $payment = Payment::factory()->create(['payment_date' => null]);
+        $repository = new PaymentRepository;
+
+        $updated = $repository->updateConfirmation($payment, '2025-01-15', PaymentStatus::Paid);
+
+        expect($updated->status)->toBe(PaymentStatus::Paid)
+            ->and($updated->payment_date->format('Y-m-d'))->toBe('2025-01-15')
+            ->and($payment->fresh()->status)->toBe(PaymentStatus::Paid);
+    });
+
+    it('updates payment_date and status to failed', function () {
+        $payment = Payment::factory()->create(['payment_date' => null]);
+        $repository = new PaymentRepository;
+
+        $updated = $repository->updateConfirmation($payment, '2025-02-10', PaymentStatus::Failed);
+
+        expect($updated->status)->toBe(PaymentStatus::Failed)
+            ->and($updated->payment_date->format('Y-m-d'))->toBe('2025-02-10')
+            ->and($payment->fresh()->status)->toBe(PaymentStatus::Failed);
+    });
+});

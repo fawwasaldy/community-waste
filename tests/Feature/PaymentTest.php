@@ -199,3 +199,137 @@ describe('store', function () {
             ->assertJsonValidationErrors(['household_id']);
     });
 });
+
+describe('confirm', function () {
+    it('returns 401 when unauthenticated', function () {
+        $payment = Payment::factory()->create();
+
+        $response = $this->putJson("/api/payments/{$payment->_id}/confirm", [
+            'payment_date' => '2025-01-15',
+            'status' => 'paid',
+        ]);
+
+        $response->assertUnauthorized();
+    });
+
+    it('confirms a pending payment as paid', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $payment = Payment::factory()->create(['payment_date' => null]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/payments/{$payment->_id}/confirm", [
+                'payment_date' => '2025-01-15',
+                'status' => 'paid',
+            ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.status', 'paid');
+
+        expect($payment->fresh()->status)->toBe(PaymentStatus::Paid)
+            ->and($payment->fresh()->payment_date->format('Y-m-d'))->toBe('2025-01-15');
+    });
+
+    it('confirms a pending payment as failed', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $payment = Payment::factory()->create(['payment_date' => null]);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/payments/{$payment->_id}/confirm", [
+                'payment_date' => '2025-02-10',
+                'status' => 'failed',
+            ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('data.status', 'failed');
+
+        expect($payment->fresh()->payment_date->format('Y-m-d'))->toBe('2025-02-10');
+    });
+
+    it('rejects confirming a non-pending payment', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $payment = Payment::factory()->paid()->create();
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/payments/{$payment->_id}/confirm", [
+                'payment_date' => '2025-01-15',
+                'status' => 'paid',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    });
+
+    it('returns 404 for non-existent payment id', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson('/api/payments/nonexistent-id/confirm', [
+                'payment_date' => '2025-01-15',
+                'status' => 'paid',
+            ]);
+
+        $response->assertNotFound();
+    });
+
+    it('rejects missing payment_date', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $payment = Payment::factory()->create();
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/payments/{$payment->_id}/confirm", [
+                'status' => 'paid',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment_date']);
+    });
+
+    it('rejects missing status', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $payment = Payment::factory()->create();
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/payments/{$payment->_id}/confirm", [
+                'payment_date' => '2025-01-15',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    });
+
+    it('rejects invalid status value', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $payment = Payment::factory()->create();
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/payments/{$payment->_id}/confirm", [
+                'payment_date' => '2025-01-15',
+                'status' => 'pending',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    });
+
+    it('rejects invalid payment_date format', function () {
+        $user = User::factory()->create();
+        $token = auth()->login($user);
+        $payment = Payment::factory()->create();
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->putJson("/api/payments/{$payment->_id}/confirm", [
+                'payment_date' => '15-01-2025',
+                'status' => 'paid',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment_date']);
+    });
+});
