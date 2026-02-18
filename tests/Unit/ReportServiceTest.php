@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Enums\WasteStatus;
 use App\Models\Household;
+use App\Models\Payment;
 use App\Models\User;
 use App\Models\Waste;
 use App\Models\WasteOrganic;
@@ -12,6 +14,7 @@ beforeEach(function () {
     User::query()->delete();
     Household::query()->delete();
     Waste::query()->delete();
+    Payment::query()->delete();
 });
 
 it('structures summary correctly with total, by_type, by_status, by_type_and_status', function () {
@@ -63,4 +66,41 @@ it('returns zero total and empty arrays when no data', function () {
 
     expect($byType->every(fn ($item) => $item['count'] === 0))->toBeTrue()
         ->and($byStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue();
+});
+
+describe('getPaymentSummary', function () {
+    it('structures payment summary correctly with total, by_status, and revenues', function () {
+        Payment::factory()->count(2)->create(['status' => PaymentStatus::Pending->value, 'amount' => '100.00']);
+        Payment::factory()->count(3)->paid()->create(['amount' => '50.00']);
+        Payment::factory()->count(1)->failed()->create(['amount' => '25.00']);
+
+        $service = app(ReportService::class);
+        $summary = $service->getPaymentSummary();
+
+        expect($summary)->toHaveKeys(['total_payments', 'by_status', 'confirmed_revenue', 'projected_revenue'])
+            ->and($summary['total_payments'])->toBe(6)
+            ->and($summary['by_status'])->toHaveCount(3)
+            ->and($summary['confirmed_revenue'])->toBe('150.00')
+            ->and($summary['projected_revenue'])->toBe('350.00');
+
+        $byStatus = collect($summary['by_status']);
+
+        expect($byStatus->firstWhere('status', 'pending')['count'])->toBe(2)
+            ->and($byStatus->firstWhere('status', 'paid')['count'])->toBe(3)
+            ->and($byStatus->firstWhere('status', 'failed')['count'])->toBe(1);
+    });
+
+    it('returns zeros when no payments exist', function () {
+        $service = app(ReportService::class);
+        $summary = $service->getPaymentSummary();
+
+        expect($summary['total_payments'])->toBe(0)
+            ->and($summary['by_status'])->toHaveCount(3)
+            ->and($summary['confirmed_revenue'])->toBe('0.00')
+            ->and($summary['projected_revenue'])->toBe('0.00');
+
+        $byStatus = collect($summary['by_status']);
+
+        expect($byStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue();
+    });
 });

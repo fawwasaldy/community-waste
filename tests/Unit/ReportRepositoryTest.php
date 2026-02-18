@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Enums\WasteStatus;
 use App\Models\Household;
+use App\Models\Payment;
 use App\Models\User;
 use App\Models\Waste;
 use App\Models\WasteOrganic;
@@ -12,6 +14,7 @@ beforeEach(function () {
     User::query()->delete();
     Household::query()->delete();
     Waste::query()->delete();
+    Payment::query()->delete();
 });
 
 it('returns grouped counts by type and status', function () {
@@ -35,4 +38,43 @@ it('returns empty array when no waste data', function () {
     $results = $repository->getWasteSummary();
 
     expect($results)->toBeArray()->toBeEmpty();
+});
+
+describe('getPaymentSummary', function () {
+    it('returns counts and amounts grouped by status', function () {
+        Payment::factory()->count(2)->create(['status' => PaymentStatus::Pending->value, 'amount' => '100.00']);
+        Payment::factory()->count(3)->paid()->create(['amount' => '50.00']);
+        Payment::factory()->count(1)->failed()->create(['amount' => '75.00']);
+
+        $repository = new ReportRepository;
+        $results = $repository->getPaymentSummary();
+
+        expect($results)->toHaveKey('pending')
+            ->and($results['pending']['count'])->toBe(2)
+            ->and($results['pending']['total_amount'])->toBe('200.00')
+            ->and($results)->toHaveKey('paid')
+            ->and($results['paid']['count'])->toBe(3)
+            ->and($results['paid']['total_amount'])->toBe('150.00')
+            ->and($results)->toHaveKey('failed')
+            ->and($results['failed']['count'])->toBe(1)
+            ->and($results['failed']['total_amount'])->toBe('75.00');
+    });
+
+    it('returns empty array when no payments exist', function () {
+        $repository = new ReportRepository;
+        $results = $repository->getPaymentSummary();
+
+        expect($results)->toBeArray()->toBeEmpty();
+    });
+
+    it('omits status keys with no payments', function () {
+        Payment::factory()->count(2)->paid()->create(['amount' => '100.00']);
+
+        $repository = new ReportRepository;
+        $results = $repository->getPaymentSummary();
+
+        expect($results)->toHaveKey('paid')
+            ->and($results)->not->toHaveKey('pending')
+            ->and($results)->not->toHaveKey('failed');
+    });
 });

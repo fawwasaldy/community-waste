@@ -16,4 +16,14 @@ class ReportController extends Controller
             'data' => $summary,
         ]);
     }
+
+    public function paymentSummary(ReportService $service): JsonResponse
+    {
+        $summary = $service->getPaymentSummary();
+
+        return response()->json([
+            'message' => 'Payment summary retrieved successfully.',
+            'data' => $summary,
+        ]);
+    }
 }
