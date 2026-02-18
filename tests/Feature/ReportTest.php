@@ -172,3 +172,112 @@ describe('paymentSummary', function () {
             ->and($byStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue();
     });
 });
+
+describe('householdHistory', function () {
+    it('returns 200 with correct structure', function () {
+        $household = Household::factory()->create();
+
+        $response = $this->getJson("/api/reports/households/{$household->_id}/history");
+
+        $response->assertOk()
+            ->assertJsonPath('message', 'Household history retrieved successfully.')
+            ->assertJsonStructure([
+                'message',
+                'data' => [
+                    'household_id',
+                    'pickups' => ['total', 'by_status', 'by_type'],
+                    'payments' => ['total', 'by_status', 'confirmed_revenue', 'projected_revenue'],
+                ],
+            ]);
+    });
+
+    it('returns 404 when household does not exist', function () {
+        $response = $this->getJson('/api/reports/households/000000000000000000000000/history');
+
+        $response->assertNotFound();
+    });
+
+    it('returns correct pickup counts by status', function () {
+        $household = Household::factory()->create();
+
+        WasteOrganic::factory()->count(2)->create([
+            'household_id' => (string) $household->_id,
+            'status' => WasteStatus::Pending->value,
+        ]);
+        WastePlastic::factory()->count(1)->create([
+            'household_id' => (string) $household->_id,
+            'status' => WasteStatus::Completed->value,
+        ]);
+
+        $response = $this->getJson("/api/reports/households/{$household->_id}/history");
+
+        $response->assertOk();
+
+        $byStatus = collect($response->json('data.pickups.by_status'));
+
+        expect($byStatus->firstWhere('status', 'pending')['count'])->toBe(2)
+            ->and($byStatus->firstWhere('status', 'completed')['count'])->toBe(1)
+            ->and($byStatus->firstWhere('status', 'scheduled')['count'])->toBe(0)
+            ->and($byStatus->firstWhere('status', 'canceled')['count'])->toBe(0);
+    });
+
+    it('returns correct pickup counts by type', function () {
+        $household = Household::factory()->create();
+
+        WasteOrganic::factory()->count(3)->create([
+            'household_id' => (string) $household->_id,
+        ]);
+        WastePlastic::factory()->count(2)->create([
+            'household_id' => (string) $household->_id,
+        ]);
+
+        $response = $this->getJson("/api/reports/households/{$household->_id}/history");
+
+        $response->assertOk();
+
+        $byType = collect($response->json('data.pickups.by_type'));
+
+        expect($byType->firstWhere('type', 'organic')['count'])->toBe(3)
+            ->and($byType->firstWhere('type', 'plastic')['count'])->toBe(2)
+            ->and($byType->firstWhere('type', 'paper')['count'])->toBe(0)
+            ->and($byType->firstWhere('type', 'electronic')['count'])->toBe(0);
+    });
+
+    it('calculates confirmed_revenue from paid payments only', function () {
+        $household = Household::factory()->create();
+
+        Payment::factory()->count(2)->paid()->create([
+            'household_id' => (string) $household->_id,
+            'amount' => '100.00',
+        ]);
+        Payment::factory()->count(1)->failed()->create([
+            'household_id' => (string) $household->_id,
+            'amount' => '999.00',
+        ]);
+
+        $response = $this->getJson("/api/reports/households/{$household->_id}/history");
+
+        $response->assertOk()
+            ->assertJsonPath('data.payments.confirmed_revenue', '200.00');
+    });
+
+    it('returns zeros when household has no data', function () {
+        $household = Household::factory()->create();
+
+        $response = $this->getJson("/api/reports/households/{$household->_id}/history");
+
+        $response->assertOk()
+            ->assertJsonPath('data.pickups.total', 0)
+            ->assertJsonPath('data.payments.total', 0)
+            ->assertJsonPath('data.payments.confirmed_revenue', '0.00')
+            ->assertJsonPath('data.payments.projected_revenue', '0.00');
+
+        $byStatus = collect($response->json('data.pickups.by_status'));
+        $byType = collect($response->json('data.pickups.by_type'));
+        $payByStatus = collect($response->json('data.payments.by_status'));
+
+        expect($byStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue()
+            ->and($byType->every(fn ($item) => $item['count'] === 0))->toBeTrue()
+            ->and($payByStatus->every(fn ($item) => $item['count'] === 0))->toBeTrue();
+    });
+});

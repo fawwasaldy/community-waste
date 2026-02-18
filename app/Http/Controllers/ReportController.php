@@ -26,4 +26,14 @@ class ReportController extends Controller
             'data' => $summary,
         ]);
     }
+
+    public function householdHistory(string $id, ReportService $service): JsonResponse
+    {
+        $history = $service->getHouseholdHistory($id);
+
+        return response()->json([
+            'message' => 'Household history retrieved successfully.',
+            'data' => $history,
+        ]);
+    }
 }
