@@ -82,6 +82,17 @@ describe('index', function () {
             ->assertJsonPath('meta.per_page', 2);
     });
 
+    it('returns all results without pagination when disable_pagination is true', function () {
+        Payment::factory()->count(15)->create();
+
+        $response = $this->getJson('/api/payments?disable_pagination=1');
+
+        $response->assertOk()
+            ->assertJsonCount(15, 'data')
+            ->assertJsonMissingPath('meta')
+            ->assertJsonMissingPath('links');
+    });
+
     it('returns empty data when no matches', function () {
         Payment::factory()->paid()->create();
 

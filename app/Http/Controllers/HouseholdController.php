@@ -22,8 +22,9 @@ class HouseholdController extends Controller
 
         $filters = $request->only(['search', 'block', 'no']);
         $perPage = $request->query('per_page', 10);
+        $disablePagination = filter_var($request->query('disable_pagination', false), FILTER_VALIDATE_BOOLEAN);
 
-        $households = $service->getHouseholds($filters, (int) $perPage);
+        $households = $service->getHouseholds($filters, (int) $perPage, $disablePagination);
 
         return HouseholdResource::collection($households);
     }
