@@ -1,12 +1,10 @@
 <?php
 
 use App\Models\Household;
-use App\Models\User;
 use App\Services\HouseholdService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 beforeEach(function () {
-    User::query()->delete();
     Household::query()->delete();
 });
 
@@ -91,12 +89,14 @@ describe('updateHousehold', function () {
 });
 
 describe('deleteHousehold', function () {
-    it('deletes the household', function () {
+    it('soft deletes the household', function () {
         $household = Household::factory()->create();
 
         $service = app(HouseholdService::class);
         $service->deleteHousehold($household);
 
-        expect(Household::find($household->_id))->toBeNull();
+        expect(Household::find($household->_id))->toBeNull()
+            ->and(Household::withTrashed()->find($household->_id))->not->toBeNull()
+            ->and(Household::withTrashed()->find($household->_id)->trashed())->toBeTrue();
     });
 });
