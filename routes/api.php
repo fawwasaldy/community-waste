@@ -16,6 +16,7 @@ Route::post('pickups', [PickupController::class, 'store']);
 Route::apiResource('households', HouseholdController::class);
 
 Route::get('reports/waste-summary', [ReportController::class, 'wasteSummary']);
+Route::get('reports/payment-summary', [ReportController::class, 'paymentSummary']);
 
 Route::middleware('auth:api')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout']);

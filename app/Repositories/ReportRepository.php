@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Models\Payment;
 use App\Models\Waste;
 
 class ReportRepository
@@ -31,6 +32,34 @@ class ReportRepository
                 'type' => $id['type'],
                 'status' => $id['status'],
                 'count' => $result->count,
+            ];
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @return array<string, array{status: string, count: int, total_amount: string}>
+     */
+    public function getPaymentSummary(): array
+    {
+        $results = Payment::raw(fn ($collection) => $collection->aggregate([
+            [
+                '$group' => [
+                    '_id' => '$status',
+                    'count' => ['$sum' => 1],
+                    'total_amount' => ['$sum' => '$amount'],
+                ],
+            ],
+        ]));
+
+        $summary = [];
+        foreach ($results as $result) {
+            $status = (string) $result->_id;
+            $summary[$status] = [
+                'status' => $status,
+                'count' => $result->count,
+                'total_amount' => sprintf('%.2f', (string) $result->total_amount),
             ];
         }
 

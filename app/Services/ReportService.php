@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatus;
 use App\Enums\WasteStatus;
 use App\Enums\WasteType;
 use App\Repositories\ReportRepository;
@@ -69,6 +70,36 @@ class ReportService
             'by_type' => $byType,
             'by_status' => $byStatus,
             'by_type_and_status' => $byTypeAndStatus,
+        ];
+    }
+
+    /**
+     * @return array{total_payments: int, by_status: array<int, array{status: string, count: int}>, confirmed_revenue: string, projected_revenue: string}
+     */
+    public function getPaymentSummary(): array
+    {
+        $rawData = $this->reportRepository->getPaymentSummary();
+
+        $totalPayments = 0;
+        $byStatus = [];
+
+        foreach (PaymentStatus::cases() as $status) {
+            $entry = $rawData[$status->value] ?? ['count' => 0, 'total_amount' => '0.00'];
+            $totalPayments += $entry['count'];
+            $byStatus[] = [
+                'status' => $status->value,
+                'count' => $entry['count'],
+            ];
+        }
+
+        $paidAmount = (float) ($rawData[PaymentStatus::Paid->value]['total_amount'] ?? '0.00');
+        $pendingAmount = (float) ($rawData[PaymentStatus::Pending->value]['total_amount'] ?? '0.00');
+
+        return [
+            'total_payments' => $totalPayments,
+            'by_status' => $byStatus,
+            'confirmed_revenue' => number_format($paidAmount, 2, '.', ''),
+            'projected_revenue' => number_format($paidAmount + $pendingAmount, 2, '.', ''),
         ];
     }
 }
