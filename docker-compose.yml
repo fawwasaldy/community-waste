@@ -1,0 +1,68 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:80"
+    env_file: .env
+    environment:
+      DB_CONNECTION: mongodb
+      MONGODB_URI: "mongodb://mongodb:27017/?replicaSet=rs0"
+      MONGODB_DATABASE: community-waste
+      APP_URL: "http://localhost:8080"
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+
+  mongodb:
+    image: mongo:8
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  mongo-init:
+    image: mongo:8
+    restart: "no"
+    command: >
+      mongosh --host mongodb --eval
+      "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]})"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  mongodb-test:
+    image: mongo:8
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongodb_test_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  mongo-test-init:
+    image: mongo:8
+    restart: "no"
+    command: >
+      mongosh --host mongodb-test --eval
+      "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb-test:27017'}]})"
+    depends_on:
+      mongodb-test:
+        condition: service_healthy
+
+volumes:
+  mongodb_data:
+  mongodb_test_data:
