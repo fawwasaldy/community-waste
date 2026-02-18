@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\PaymentStatus;
-use App\Models\Concerns\SerializesDateToAppTimezone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use MongoDB\Laravel\Eloquent\Model;
@@ -11,7 +10,7 @@ use MongoDB\Laravel\Relations\HasMany;
 
 class Household extends Model
 {
-    use HasFactory, SoftDeletes, SerializesDateToAppTimezone;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'owner_name',

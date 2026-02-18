@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\WasteStatus;
 use App\Enums\WasteType;
-use App\Models\Concerns\SerializesDateToAppTimezone;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +12,7 @@ use MongoDB\Laravel\Relations\BelongsTo;
 
 class Waste extends Model
 {
-    use HasFactory, SerializesDateToAppTimezone;
+    use HasFactory;
 
     protected $table = 'wastes';
 
