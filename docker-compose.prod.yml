@@ -1,0 +1,46 @@
+services:
+  app:
+    image: ${IMAGE_NAME}:latest
+    ports:
+      - "80:80"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY}
+      APP_URL: ${APP_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      DB_CONNECTION: mongodb
+      MONGODB_URI: "mongodb://mongodb:27017/?replicaSet=rs0"
+      MONGODB_DATABASE: ${MONGODB_DATABASE}
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:8
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  mongo-init:
+    image: mongo:8
+    restart: "no"
+    command: >
+      mongosh --host mongodb --eval
+      "try { rs.status(); print('replica set already initialized') } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  mongodb_data:
