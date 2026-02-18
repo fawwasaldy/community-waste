@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\ReportService;
+use Illuminate\Http\JsonResponse;
+
+class ReportController extends Controller
+{
+    public function wasteSummary(ReportService $service): JsonResponse
+    {
+        $summary = $service->getWasteSummary();
+
+        return response()->json([
+            'message' => 'Waste summary retrieved successfully.',
+            'data' => $summary,
+        ]);
+    }
+}

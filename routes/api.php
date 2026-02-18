@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PickupController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register']);
@@ -13,6 +14,8 @@ Route::get('pickups', [PickupController::class, 'index']);
 Route::post('pickups', [PickupController::class, 'store']);
 
 Route::apiResource('households', HouseholdController::class);
+
+Route::get('reports/waste-summary', [ReportController::class, 'wasteSummary']);
 
 Route::middleware('auth:api')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout']);
