@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class WasteService
@@ -99,18 +100,18 @@ class WasteService
             ]);
         }
 
-        $paymentData = [
-            'household_id' => $waste->household_id,
-            'amount' => $waste->getPaymentAmount(),
-            'payment_date' => null,
-            'status' => PaymentStatus::Pending->value,
-        ];
+        return DB::transaction(function () use ($waste): Waste {
+            $this->paymentRepository->create([
+                'household_id' => $waste->household_id,
+                'amount' => $waste->getPaymentAmount(),
+                'payment_date' => null,
+                'status' => PaymentStatus::Pending->value,
+            ]);
 
-        $this->paymentRepository->create($paymentData);
-
-        return $this->wasteRepository->update($waste, [
-            'status' => WasteStatus::Completed->value,
-        ]);
+            return $this->wasteRepository->update($waste, [
+                'status' => WasteStatus::Completed->value,
+            ]);
+        });
     }
 
     /**
