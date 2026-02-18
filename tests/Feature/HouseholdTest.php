@@ -64,6 +64,18 @@ describe('index', function () {
             ->assertJsonPath('data.0.no', '1');
     });
 
+    it('returns all results without pagination when disable_pagination is true', function () {
+        Household::factory()->count(15)->create();
+
+        $response = $this->withHeaders(authHeader())
+            ->getJson('/api/households?disable_pagination=1');
+
+        $response->assertSuccessful()
+            ->assertJsonCount(15, 'data')
+            ->assertJsonMissingPath('meta')
+            ->assertJsonMissingPath('links');
+    });
+
     it('returns empty results when no match', function () {
         Household::factory()->create(['owner_name' => 'John Doe']);
 
