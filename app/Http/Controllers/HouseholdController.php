@@ -6,6 +6,7 @@ use App\Http\Requests\StoreHouseholdRequest;
 use App\Http\Requests\UpdateHouseholdRequest;
 use App\Http\Resources\HouseholdResource;
 use App\Models\Household;
+use App\Services\HouseholdService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,39 +16,23 @@ class HouseholdController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, HouseholdService $service): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Household::class);
 
-        $query = Household::query();
-
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('owner_name', 'like', "%{$search}%")
-                    ->orWhere('address', 'like', "%{$search}%")
-                    ->orWhere('block', 'like', "%{$search}%")
-                    ->orWhere('no', 'like', "%{$search}%");
-            });
-        }
-
-        if ($block = $request->query('block')) {
-            $query->where('block', $block);
-        }
-
-        if ($no = $request->query('no')) {
-            $query->where('no', $no);
-        }
-
+        $filters = $request->only(['search', 'block', 'no']);
         $perPage = $request->query('per_page', 10);
 
-        return HouseholdResource::collection($query->paginate($perPage));
+        $households = $service->getHouseholds($filters, (int) $perPage);
+
+        return HouseholdResource::collection($households);
     }
 
-    public function store(StoreHouseholdRequest $request): JsonResponse
+    public function store(StoreHouseholdRequest $request, HouseholdService $service): JsonResponse
     {
         $this->authorize('create', Household::class);
 
-        $household = Household::create($request->validated());
+        $household = $service->createHousehold($request->validated());
 
         return new HouseholdResource($household)
             ->response()
@@ -61,20 +46,20 @@ class HouseholdController extends Controller
         return new HouseholdResource($household);
     }
 
-    public function update(UpdateHouseholdRequest $request, Household $household): HouseholdResource
+    public function update(UpdateHouseholdRequest $request, Household $household, HouseholdService $service): HouseholdResource
     {
         $this->authorize('update', $household);
 
-        $household->update($request->validated());
+        $household = $service->updateHousehold($household, $request->validated());
 
         return new HouseholdResource($household);
     }
 
-    public function destroy(Household $household): JsonResponse
+    public function destroy(Household $household, HouseholdService $service): JsonResponse
     {
         $this->authorize('delete', $household);
 
-        $household->delete();
+        $service->deleteHousehold($household);
 
         return response()->json(['message' => 'Household deleted successfully.']);
     }
