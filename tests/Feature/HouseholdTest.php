@@ -132,7 +132,7 @@ describe('update', function () {
 });
 
 describe('destroy', function () {
-    it('deletes a household', function () {
+    it('soft deletes a household', function () {
         $household = Household::factory()->create();
 
         $response = $this->deleteJson("/api/households/{$household->_id}");
@@ -140,7 +140,27 @@ describe('destroy', function () {
         $response->assertSuccessful()
             ->assertJson(['message' => 'Household deleted successfully.']);
 
-        $this->assertDatabaseMissing('households', ['_id' => $household->_id]);
+        $this->assertSoftDeleted($household);
+        expect(Household::withTrashed()->find($household->_id))->not->toBeNull();
+    });
+
+    it('excludes soft-deleted household from index', function () {
+        $household = Household::factory()->create();
+        $household->delete();
+
+        $response = $this->getJson('/api/households');
+
+        $response->assertSuccessful()
+            ->assertJsonCount(0, 'data');
+    });
+
+    it('returns 404 for soft-deleted household on show', function () {
+        $household = Household::factory()->create();
+        $household->delete();
+
+        $response = $this->getJson("/api/households/{$household->_id}");
+
+        $response->assertNotFound();
     });
 
     it('returns 404 for invalid id', function () {

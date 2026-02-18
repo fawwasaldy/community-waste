@@ -1,11 +1,9 @@
 <?php
 
 use App\Models\Household;
-use App\Models\User;
 use App\Repositories\HouseholdRepository;
 
 beforeEach(function () {
-    User::query()->delete();
     Household::query()->delete();
 });
 
@@ -160,12 +158,14 @@ describe('update', function () {
 });
 
 describe('delete', function () {
-    it('deletes the household from the database', function () {
+    it('soft deletes the household', function () {
         $household = Household::factory()->create();
         $repository = new HouseholdRepository;
 
         $repository->delete($household);
 
-        expect(Household::find($household->_id))->toBeNull();
+        expect(Household::find($household->_id))->toBeNull()
+            ->and(Household::withTrashed()->find($household->_id))->not->toBeNull()
+            ->and(Household::withTrashed()->find($household->_id)->trashed())->toBeTrue();
     });
 });
