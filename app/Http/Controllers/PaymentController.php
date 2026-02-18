@@ -8,11 +8,10 @@ use App\Http\Requests\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PaymentController extends Controller
 {
-    public function index(IndexPaymentRequest $request, PaymentService $service): AnonymousResourceCollection
+    public function index(IndexPaymentRequest $request, PaymentService $service): JsonResponse
     {
         $filters = $request->only(['status', 'household_id', 'payment_date_from', 'payment_date_to']);
         $perPage = $request->query('per_page', 10);
@@ -20,22 +19,26 @@ class PaymentController extends Controller
 
         $payments = $service->getPayments($filters, (int) $perPage, $disablePagination);
 
-        return PaymentResource::collection($payments);
+        $data = PaymentResource::collection($payments)->response()->getData(true);
+
+        return response()->json(['message' => 'Payments retrieved successfully.'] + $data);
     }
 
     public function store(StorePaymentRequest $request, PaymentService $service): JsonResponse
     {
         $payment = $service->createPayment($request->validated());
 
-        return new PaymentResource($payment)
-            ->response()
-            ->setStatusCode(201);
+        $data = new PaymentResource($payment)->response()->getData(true);
+
+        return response()->json(['message' => 'Payment created successfully.'] + $data, 201);
     }
 
-    public function confirm(ConfirmPaymentRequest $request, string $id, PaymentService $service): PaymentResource
+    public function confirm(ConfirmPaymentRequest $request, string $id, PaymentService $service): JsonResponse
     {
         $payment = $service->confirmPayment($id, $request->validated());
 
-        return new PaymentResource($payment);
+        $data = new PaymentResource($payment)->response()->getData(true);
+
+        return response()->json(['message' => 'Payment confirmed successfully.'] + $data);
     }
 }

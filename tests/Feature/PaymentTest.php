@@ -177,6 +177,7 @@ describe('store', function () {
             ]);
 
         $response->assertCreated()
+            ->assertJsonPath('message', 'Payment created successfully.')
             ->assertJsonPath('data.household_id', $household->_id)
             ->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.payment_date', null);
@@ -271,6 +272,7 @@ describe('confirm', function () {
             ]);
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'Payment confirmed successfully.')
             ->assertJsonPath('data.status', 'paid');
 
         expect($payment->fresh()->status)->toBe(PaymentStatus::Paid)
@@ -289,6 +291,7 @@ describe('confirm', function () {
             ]);
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'Payment confirmed successfully.')
             ->assertJsonPath('data.status', 'failed');
 
         expect($payment->fresh()->payment_date->format('Y-m-d'))->toBe('2025-02-10');

@@ -8,11 +8,10 @@ use App\Http\Resources\WasteResource;
 use App\Services\WasteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PickupController extends Controller
 {
-    public function index(Request $request, WasteService $service): AnonymousResourceCollection
+    public function index(Request $request, WasteService $service): JsonResponse
     {
         $filters = $request->only(['status', 'type', 'household_id']);
         $perPage = $request->query('per_page', 10);
@@ -20,36 +19,44 @@ class PickupController extends Controller
 
         $pickups = $service->getPickups($filters, (int) $perPage, $disablePagination);
 
-        return WasteResource::collection($pickups);
+        $data = WasteResource::collection($pickups)->response()->getData(true);
+
+        return response()->json(['message' => 'Pickups retrieved successfully.'] + $data);
     }
 
     public function store(StorePickupRequest $request, WasteService $service): JsonResponse
     {
         $waste = $service->createPickup($request->validated());
 
-        return new WasteResource($waste)
-            ->response()
-            ->setStatusCode(201);
+        $data = new WasteResource($waste)->response()->getData(true);
+
+        return response()->json(['message' => 'Pickup created successfully.'] + $data, 201);
     }
 
-    public function schedule(SchedulePickupRequest $request, string $id, WasteService $service): WasteResource
+    public function schedule(SchedulePickupRequest $request, string $id, WasteService $service): JsonResponse
     {
         $waste = $service->schedulePickup($id, $request->validated()['pickup_date']);
 
-        return new WasteResource($waste);
+        $data = new WasteResource($waste)->response()->getData(true);
+
+        return response()->json(['message' => 'Pickup scheduled successfully.'] + $data);
     }
 
-    public function complete(string $id, WasteService $service): WasteResource
+    public function complete(string $id, WasteService $service): JsonResponse
     {
         $waste = $service->completePickup($id);
 
-        return new WasteResource($waste);
+        $data = new WasteResource($waste)->response()->getData(true);
+
+        return response()->json(['message' => 'Pickup completed successfully.'] + $data);
     }
 
-    public function cancel(string $id, WasteService $service): WasteResource
+    public function cancel(string $id, WasteService $service): JsonResponse
     {
         $waste = $service->cancelPickup($id);
 
-        return new WasteResource($waste);
+        $data = new WasteResource($waste)->response()->getData(true);
+
+        return response()->json(['message' => 'Pickup canceled successfully.'] + $data);
     }
 }

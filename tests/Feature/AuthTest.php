@@ -16,7 +16,8 @@ describe('register', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonStructure(['access_token', 'token_type', 'expires_in']);
+            ->assertJsonStructure(['message', 'access_token', 'token_type', 'expires_in'])
+            ->assertJsonPath('message', 'User registered successfully.');
 
         $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
     });
@@ -65,7 +66,8 @@ describe('login', function () {
         ]);
 
         $response->assertSuccessful()
-            ->assertJsonStructure(['access_token', 'token_type', 'expires_in']);
+            ->assertJsonStructure(['message', 'access_token', 'token_type', 'expires_in'])
+            ->assertJsonPath('message', 'Successfully logged in.');
     });
 
     it('fails with invalid credentials', function () {
@@ -116,6 +118,7 @@ describe('me', function () {
             ->getJson('/api/me');
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'User retrieved successfully.')
             ->assertJsonFragment(['email' => $user->email]);
     });
 
@@ -135,7 +138,8 @@ describe('refresh', function () {
             ->postJson('/api/refresh');
 
         $response->assertSuccessful()
-            ->assertJsonStructure(['access_token', 'token_type', 'expires_in']);
+            ->assertJsonStructure(['message', 'access_token', 'token_type', 'expires_in'])
+            ->assertJsonPath('message', 'Token refreshed successfully.');
     });
 
     it('fails without authentication', function () {

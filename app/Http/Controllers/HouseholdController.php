@@ -9,11 +9,10 @@ use App\Models\Household;
 use App\Services\HouseholdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class HouseholdController extends Controller
 {
-    public function index(Request $request, HouseholdService $service): AnonymousResourceCollection
+    public function index(Request $request, HouseholdService $service): JsonResponse
     {
         $filters = $request->only(['search', 'block', 'no']);
         $perPage = $request->query('per_page', 10);
@@ -21,28 +20,34 @@ class HouseholdController extends Controller
 
         $households = $service->getHouseholds($filters, (int) $perPage, $disablePagination);
 
-        return HouseholdResource::collection($households);
+        $data = HouseholdResource::collection($households)->response()->getData(true);
+
+        return response()->json(['message' => 'Households retrieved successfully.'] + $data);
     }
 
     public function store(StoreHouseholdRequest $request, HouseholdService $service): JsonResponse
     {
         $household = $service->createHousehold($request->validated());
 
-        return new HouseholdResource($household)
-            ->response()
-            ->setStatusCode(201);
+        $data = new HouseholdResource($household)->response()->getData(true);
+
+        return response()->json(['message' => 'Household created successfully.'] + $data, 201);
     }
 
-    public function show(Household $household): HouseholdResource
+    public function show(Household $household): JsonResponse
     {
-        return new HouseholdResource($household);
+        $data = new HouseholdResource($household)->response()->getData(true);
+
+        return response()->json(['message' => 'Household retrieved successfully.'] + $data);
     }
 
-    public function update(UpdateHouseholdRequest $request, Household $household, HouseholdService $service): HouseholdResource
+    public function update(UpdateHouseholdRequest $request, Household $household, HouseholdService $service): JsonResponse
     {
         $household = $service->updateHousehold($household, $request->validated());
 
-        return new HouseholdResource($household);
+        $data = new HouseholdResource($household)->response()->getData(true);
+
+        return response()->json(['message' => 'Household updated successfully.'] + $data);
     }
 
     public function destroy(Household $household, HouseholdService $service): JsonResponse

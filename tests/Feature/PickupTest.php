@@ -120,6 +120,7 @@ describe('store', function () {
         ]);
 
         $response->assertCreated()
+            ->assertJsonPath('message', 'Pickup created successfully.')
             ->assertJsonPath('data.type', 'organic')
             ->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.household_id', $household->_id);
@@ -134,6 +135,7 @@ describe('store', function () {
         ]);
 
         $response->assertCreated()
+            ->assertJsonPath('message', 'Pickup created successfully.')
             ->assertJsonPath('data.type', 'plastic')
             ->assertJsonPath('data.status', 'pending');
     });
@@ -147,6 +149,7 @@ describe('store', function () {
         ]);
 
         $response->assertCreated()
+            ->assertJsonPath('message', 'Pickup created successfully.')
             ->assertJsonPath('data.type', 'paper')
             ->assertJsonPath('data.status', 'pending');
     });
@@ -161,6 +164,7 @@ describe('store', function () {
         ]);
 
         $response->assertCreated()
+            ->assertJsonPath('message', 'Pickup created successfully.')
             ->assertJsonPath('data.type', 'electronic')
             ->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.safety_check', true);
@@ -224,6 +228,7 @@ describe('schedule', function () {
             ]);
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'Pickup scheduled successfully.')
             ->assertJsonPath('data.status', 'scheduled');
 
         expect($waste->fresh()->pickup_date->format('Y-m-d'))->toBe($pickupDate);
@@ -344,6 +349,7 @@ describe('complete', function () {
             ->putJson("/api/pickups/{$waste->_id}/complete");
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'Pickup completed successfully.')
             ->assertJsonPath('data.status', 'completed');
 
         expect($waste->fresh()->status)->toBe(WasteStatus::Completed);
@@ -431,6 +437,7 @@ describe('cancel', function () {
             ->putJson("/api/pickups/{$waste->_id}/cancel");
 
         $response->assertSuccessful()
+            ->assertJsonPath('message', 'Pickup canceled successfully.')
             ->assertJsonPath('data.status', 'canceled');
 
         expect($waste->fresh()->status)->toBe(WasteStatus::Canceled);
