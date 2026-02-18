@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Enums\WasteStatus;
 use App\Models\Waste;
 use App\Models\WasteElectronic;
 use App\Models\WasteOrganic;
@@ -75,28 +74,13 @@ class WasteRepository
         return $modelClass::create($data);
     }
 
-    public function updateSchedule(Waste $waste, string $pickupDate): Waste
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Waste $waste, array $data): Waste
     {
-        $waste->pickup_date = $pickupDate;
-        $waste->status = WasteStatus::Scheduled;
-        $waste->save();
+        $waste->update($data);
 
-        return $waste;
-    }
-
-    public function markCompleted(Waste $waste): Waste
-    {
-        $waste->status = WasteStatus::Completed;
-        $waste->save();
-
-        return $waste;
-    }
-
-    public function markCanceled(Waste $waste): Waste
-    {
-        $waste->status = WasteStatus::Canceled;
-        $waste->save();
-
-        return $waste;
+        return $waste->refresh();
     }
 }

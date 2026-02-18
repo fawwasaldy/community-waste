@@ -120,12 +120,15 @@ describe('find', function () {
     });
 });
 
-describe('updateConfirmation', function () {
+describe('update', function () {
     it('updates payment_date and status to paid', function () {
         $payment = Payment::factory()->create(['payment_date' => null]);
         $repository = new PaymentRepository;
 
-        $updated = $repository->updateConfirmation($payment, '2025-01-15', PaymentStatus::Paid);
+        $updated = $repository->update($payment, [
+            'payment_date' => '2025-01-15',
+            'status' => PaymentStatus::Paid->value,
+        ]);
 
         expect($updated->status)->toBe(PaymentStatus::Paid)
             ->and($updated->payment_date->format('Y-m-d'))->toBe('2025-01-15')
@@ -136,7 +139,10 @@ describe('updateConfirmation', function () {
         $payment = Payment::factory()->create(['payment_date' => null]);
         $repository = new PaymentRepository;
 
-        $updated = $repository->updateConfirmation($payment, '2025-02-10', PaymentStatus::Failed);
+        $updated = $repository->update($payment, [
+            'payment_date' => '2025-02-10',
+            'status' => PaymentStatus::Failed->value,
+        ]);
 
         expect($updated->status)->toBe(PaymentStatus::Failed)
             ->and($updated->payment_date->format('Y-m-d'))->toBe('2025-02-10')

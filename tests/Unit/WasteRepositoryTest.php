@@ -92,7 +92,7 @@ describe('query', function () {
     });
 });
 
-describe('schedule', function () {
+describe('find', function () {
     it('finds waste by id', function () {
         $waste = WasteOrganic::factory()->create();
         $repository = new WasteRepository;
@@ -110,41 +110,46 @@ describe('schedule', function () {
 
         expect($found)->toBeNull();
     });
+});
 
-    it('updates schedule with pickup_date and status', function () {
+describe('update', function () {
+    it('updates pickup_date and status to scheduled', function () {
         $waste = WasteOrganic::factory()->create();
         $repository = new WasteRepository;
         $pickupDate = now()->format('Y-m-d');
 
-        $updated = $repository->updateSchedule($waste, $pickupDate);
+        $updated = $repository->update($waste, [
+            'pickup_date' => $pickupDate,
+            'status' => WasteStatus::Scheduled->value,
+        ]);
 
-        expect($updated->status)->toBe(\App\Enums\WasteStatus::Scheduled)
+        expect($updated->status)->toBe(WasteStatus::Scheduled)
             ->and($updated->pickup_date->format('Y-m-d'))->toBe($pickupDate);
     });
-});
 
-describe('complete', function () {
-    it('markCompleted updates status to completed', function () {
+    it('updates status to completed', function () {
         $waste = WasteOrganic::factory()->create([
             'status' => WasteStatus::Scheduled->value,
         ]);
         $repository = new WasteRepository;
 
-        $result = $repository->markCompleted($waste);
+        $result = $repository->update($waste, [
+            'status' => WasteStatus::Completed->value,
+        ]);
 
         expect($result->status)->toBe(WasteStatus::Completed)
             ->and($waste->fresh()->status)->toBe(WasteStatus::Completed);
     });
-});
 
-describe('cancel', function () {
-    it('markCanceled updates status to canceled', function () {
+    it('updates status to canceled', function () {
         $waste = WasteOrganic::factory()->create([
             'status' => WasteStatus::Scheduled->value,
         ]);
         $repository = new WasteRepository;
 
-        $result = $repository->markCanceled($waste);
+        $result = $repository->update($waste, [
+            'status' => WasteStatus::Canceled->value,
+        ]);
 
         expect($result->status)->toBe(WasteStatus::Canceled)
             ->and($waste->fresh()->status)->toBe(WasteStatus::Canceled);
