@@ -15,6 +15,7 @@ beforeEach(function () {
     User::query()->delete();
     Household::query()->delete();
     Waste::query()->delete();
+    Payment::query()->delete();
 });
 
 describe('index', function () {

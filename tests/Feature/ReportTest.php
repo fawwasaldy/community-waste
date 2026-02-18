@@ -4,12 +4,14 @@ use App\Enums\PaymentStatus;
 use App\Enums\WasteStatus;
 use App\Models\Household;
 use App\Models\Payment;
+use App\Models\User;
 use App\Models\Waste;
 use App\Models\WasteElectronic;
 use App\Models\WasteOrganic;
 use App\Models\WastePlastic;
 
 beforeEach(function () {
+    User::query()->delete();
     Household::query()->delete();
     Waste::query()->delete();
     Payment::query()->delete();

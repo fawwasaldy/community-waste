@@ -4,11 +4,13 @@ use App\Enums\PaymentStatus;
 use App\Models\Household;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\Waste;
 use App\Repositories\PaymentRepository;
 
 beforeEach(function () {
     User::query()->delete();
     Household::query()->delete();
+    Waste::query()->delete();
     Payment::query()->delete();
 });
 
