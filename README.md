@@ -20,6 +20,8 @@ Full interactive documentation is available on Postman:
 
 **[View Postman Docs →](https://documenter.getpostman.com/view/47165783/2sBXcDHgr4)**
 
+You can access the public API at `https://waste.cyanstar.dev/api`
+
 ## Requirements
 
 - [Docker](https://docs.docker.com/get-docker/) 24+
