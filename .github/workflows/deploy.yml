@@ -75,6 +75,8 @@ jobs:
             APP_ENV=production
             APP_DEBUG=false
             MONGODB_DATABASE=${{ secrets.MONGODB_DATABASE }}
+            MONGO_ROOT_USERNAME=${{ secrets.MONGO_ROOT_USERNAME }}
+            MONGO_ROOT_PASSWORD=${{ secrets.MONGO_ROOT_PASSWORD }}
             EOF
 
             # Always fetch the latest docker-compose.prod.yml from the repo
