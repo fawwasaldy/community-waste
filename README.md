@@ -23,7 +23,7 @@ Full interactive documentation is available on Postman:
 - [Docker](https://docs.docker.com/get-docker/) 24+
 - [Docker Compose](https://docs.docker.com/compose/install/) v2+
 
-## Deploy with Docker Compose
+## (Option 1) Deploy with Docker Compose
 
 This method builds the image locally from source.
 
@@ -34,18 +34,18 @@ cd community-waste
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — set APP_KEY, JWT_SECRET, MONGO_ROOT_USERNAME, MONGO_ROOT_PASSWORD, MONGODB_DATABASE
+# Edit .env — set JWT_SECRET, MONGO_ROOT_USERNAME, MONGO_ROOT_PASSWORD, MONGODB_DATABASE
 
-# 3. Generate APP_KEY (if not already set)
-docker compose run --rm app php artisan key:generate --no-interaction
+# 3. Build images, install dependencies, generate APP_KEY, and run migrations
+make setup
 
-# 4. Start services
-docker compose up -d
+# 4. Verify the setup (optional)
+make test
 ```
 
 The API will be available at `http://localhost:8080`.
 
-## Deploy with Docker Image
+## (Option 2) Deploy with Docker Image
 
 This method pulls the pre-built image from GitHub Container Registry — no source code required.
 
@@ -54,7 +54,7 @@ This method pulls the pre-built image from GitHub Container Registry — no sour
 docker pull ghcr.io/fawwasaldy/community-waste:latest
 ```
 
-Create a `docker-compose.prod.yml` (or use the one in the repo) with the following environment variables:
+Create a `docker-compose.prod.yml` (use the one in the repo) with the following environment variables:
 
 ```yaml
 services:
@@ -79,6 +79,21 @@ services:
   # ... mongodb, mongo-keygen, mongo-init services (see docker-compose.prod.yml)
 ```
 
+Create a `.env` with the following environment variables:
+
+```env
+IMAGE_NAME=ghcr.io/fawwasaldy/community-waste
+APP_KEY=<generated from make setup or php artisan key:generate>
+JWT_SECRET=<generated from make setup or php artisan jwt:secret>
+APP_URL=<your app URL, e.g., http://localhost:8080>
+APP_ENV=production
+APP_DEBUG=false
+MONGODB_DATABASE=community-waste
+MONGO_ROOT_USERNAME=<your mongo root username, e.g., admin>
+MONGO_ROOT_PASSWORD=<your mongo root password, e.g., secret123>
+
+```
+
 Then start:
 
 ```bash
@@ -87,17 +102,23 @@ docker compose -f docker-compose.prod.yml up -d
 
 ## Migrations & Seeding
 
-After the containers are running, exec into the `app` container:
+After the containers are running, exec into the `app` container using one of the following options:
 
+**Option 1 — by container name:**
 ```bash
-docker compose exec app bash
+docker exec -it community-waste-app-1 bash
 ```
 
-Run migrations and seed static data (officer account + initial config):
+**Option 2 — via Docker Compose:**
+```bash
+docker compose -f docker-compose.prod.yml exec app bash
+```
+
+Then run migrations and seed static data (officer account + initial config):
 
 ```bash
-php artisan migrate --no-interaction
-php artisan db:seed --class=StaticSeeder --no-interaction
+php artisan migrate
+php artisan db:seed --class=StaticSeeder
 ```
 
 ## API Overview
