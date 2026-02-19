@@ -8,7 +8,7 @@ services:
     env_file: .env
     environment:
       DB_CONNECTION: mongodb
-      MONGODB_URI: "mongodb://${MONGO_ROOT_USERNAME:-}:${MONGO_ROOT_PASSWORD:-}@mongodb:27017/?replicaSet=rs0&authSource=admin"
+      MONGODB_URI: "mongodb://mongodb:27017/?replicaSet=rs0"
       MONGODB_DATABASE: community-waste
       APP_URL: "http://localhost:8080"
     depends_on:
@@ -17,10 +17,7 @@ services:
 
   mongodb:
     image: mongo:8
-    command: mongod --replSet rs0 --bind_ip_all --auth
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-}
+    command: mongod --replSet rs0 --bind_ip_all
     ports:
       - "27018:27017"
     volumes:
@@ -35,14 +32,8 @@ services:
   mongo-init:
     image: mongo:8
     restart: "no"
-    environment:
-      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-}
-      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-}
     command: >
       mongosh --host mongodb
-      --username "${MONGO_ROOT_USERNAME}"
-      --password "${MONGO_ROOT_PASSWORD}"
-      --authenticationDatabase admin
       --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]})"
     depends_on:
       mongodb:
