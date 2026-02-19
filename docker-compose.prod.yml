@@ -10,7 +10,7 @@ services:
       APP_URL: ${APP_URL}
       JWT_SECRET: ${JWT_SECRET}
       DB_CONNECTION: mongodb
-      MONGODB_URI: "mongodb://mongodb:27017/?replicaSet=rs0"
+      MONGODB_URI: "mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/?replicaSet=rs0&authSource=admin"
       MONGODB_DATABASE: ${MONGODB_DATABASE}
     depends_on:
       mongo-init:
@@ -19,7 +19,10 @@ services:
 
   mongodb:
     image: mongo:8
-    command: mongod --replSet rs0 --bind_ip_all
+    command: mongod --replSet rs0 --bind_ip_all --auth
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     ports:
       - "27017:27017"
     volumes:
@@ -35,9 +38,15 @@ services:
   mongo-init:
     image: mongo:8
     restart: "no"
+    environment:
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     command: >
-      mongosh --host mongodb --eval
-      "try { rs.status(); print('replica set already initialized') } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }"
+      mongosh --host mongodb
+      --username "${MONGO_ROOT_USERNAME}"
+      --password "${MONGO_ROOT_PASSWORD}"
+      --authenticationDatabase admin
+      --eval "try { rs.status(); print('replica set already initialized') } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }"
     depends_on:
       mongodb:
         condition: service_healthy
