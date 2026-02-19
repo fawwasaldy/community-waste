@@ -12,6 +12,8 @@ Community Waste Collection System is a REST API backend for managing residential
 - **Household Owner (Guest)** — can register a household, submit pickup requests, and view reports without authentication.
 - **Officer (Authenticated Admin)** — logs in via JWT to schedule/complete/cancel pickups and manage payments.
 
+![waste-community](https://github.com/user-attachments/assets/844ada7d-44b8-478b-a737-8d4506bedf3a)
+
 ## API Documentation
 
 Full interactive documentation is available on Postman:
