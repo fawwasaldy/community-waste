@@ -17,9 +17,27 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  mongo-keygen:
+    image: mongo:8
+    user: "0"
+    volumes:
+      - mongodb_keyfile:/etc/mongo
+    command: >
+      bash -c "
+      if [ ! -f /etc/mongo/keyfile ]; then
+        openssl rand -base64 756 > /etc/mongo/keyfile &&
+        chown 999:999 /etc/mongo/keyfile &&
+        chmod 400 /etc/mongo/keyfile &&
+        echo 'Keyfile generated';
+      else
+        echo 'Keyfile already exists';
+      fi
+      "
+    restart: "no"
+
   mongodb:
     image: mongo:8
-    command: mongod --replSet rs0 --bind_ip_all --auth
+    command: mongod --replSet rs0 --bind_ip_all --auth --keyFile /etc/mongo/keyfile
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
@@ -27,6 +45,10 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+      - mongodb_keyfile:/etc/mongo:ro
+    depends_on:
+      mongo-keygen:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
@@ -53,3 +75,4 @@ services:
 
 volumes:
   mongodb_data:
+  mongodb_keyfile:
