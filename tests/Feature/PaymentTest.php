@@ -275,7 +275,8 @@ describe('confirm', function () {
 
         $response->assertSuccessful()
             ->assertJsonPath('message', 'Payment confirmed successfully.')
-            ->assertJsonPath('data.status', 'paid');
+            ->assertJsonPath('data.status', 'paid')
+            ->assertJsonPath('data.payment_date', '2025-01-15');
 
         expect($payment->fresh()->status)->toBe(PaymentStatus::Paid)
             ->and($payment->fresh()->payment_date->format('Y-m-d'))->toBe('2025-01-15');
@@ -294,7 +295,8 @@ describe('confirm', function () {
 
         $response->assertSuccessful()
             ->assertJsonPath('message', 'Payment confirmed successfully.')
-            ->assertJsonPath('data.status', 'failed');
+            ->assertJsonPath('data.status', 'failed')
+            ->assertJsonPath('data.payment_date', '2025-02-10');
 
         expect($payment->fresh()->payment_date->format('Y-m-d'))->toBe('2025-02-10');
     });
